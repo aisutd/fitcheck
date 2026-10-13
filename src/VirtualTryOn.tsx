@@ -4,6 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { chooseImage, Photo, validPhoto } from './photos';
 import { simulateTryOn } from './tryOn';
+import { router } from 'expo-router';
 const C = { ivory: '#FBF7F0', tea: '#E9DCCB', cream: '#E9DFF0', lavender: '#B9A4C9', plum: '#5A4C60', card: '#FFFEFC' };
 const features = ['Virtual Closet', 'Virtual Try-On', 'Generate Outfits', 'Prompt an Outfit'];
 type Tab = 'Your Photo' | 'Garment';
@@ -39,7 +40,7 @@ function Screen() {
   const mounted = useRef(true), busyRef = useRef(false), controller = useRef<AbortController | null>(null);
   const { height } = useWindowDimensions();
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; controller.current?.abort(); }; }, []);
-  useEffect(() => { if (!loading) { setDots(1); return; } const timer = setInterval(() => setDots(d => d % 3 + 1), 420); return () => clearInterval(timer); }, [loading]);
+  useEffect(() => { if (!loading) return; const timer = setInterval(() => setDots(d => d % 3 + 1), 420); return () => clearInterval(timer); }, [loading]);
   const update = (target: Tab, value: Photo | null) => { (target === 'Your Photo' ? setUserPhoto : setGarmentPhoto)(value); setMessage(''); };
   async function select(camera: boolean) {
     if (!sourceTab || busyRef.current) return;
@@ -50,8 +51,8 @@ function Screen() {
   }
   async function generate() {
     if (busyRef.current || !validPhoto(userPhoto) || !validPhoto(garmentPhoto)) return;
-    busyRef.current = true; setLoading(true); setMessage(''); controller.current = new AbortController();
-    try { const result = await simulateTryOn({ userPhoto, garmentPhoto }, controller.current.signal); if (mounted.current) setMessage(result.message); }
+    busyRef.current = true; setDots(1); setLoading(true); setMessage(''); controller.current = new AbortController();
+    try { await simulateTryOn({ userPhoto, garmentPhoto }, controller.current.signal); if (mounted.current) router.push('/try-on'); }
     catch { if (mounted.current) setMessage('Processing stopped. Please try again.'); }
     finally { busyRef.current = false; if (mounted.current) setLoading(false); }
   }

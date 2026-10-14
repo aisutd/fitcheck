@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Fitcheck",
+    "slug": "fitcheck",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F7F5FC",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.fitcheck.app"
+    },
+    "plugins": [
+      "expo-status-bar",
+      "expo-sharing"
+    ]
+  }
+}

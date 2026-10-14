@@ -1,0 +1,2 @@
+# Python runtime dependencies belong here, pinned as package==version.
+# No Python backend has been merged into main yet.

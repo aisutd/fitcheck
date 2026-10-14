@@ -1,0 +1,129 @@
+name: FitCheck CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      npm-directories: ${{ steps.npm.outputs.directories }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Check dependency compatibility
+        run: python -m pip check
+
+      - name: Check Python syntax
+        run: git ls-files -z -- '*.py' | xargs -0 --no-run-if-empty python -m py_compile
+
+      - name: Run Python tests when present
+        shell: bash
+        run: |
+          if git ls-files -- ':(glob)**/test_*.py' ':(glob)**/*_test.py' | grep . > /dev/null; then
+            python -m pytest
+          else
+            echo 'No Python tests are tracked yet; pytest was not run.' | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+
+      - name: Find npm projects
+        id: npm
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import PurePosixPath
+          import subprocess
+
+          tracked = subprocess.check_output(["git", "ls-files", "-z"]).decode().split("\0")
+          directories = sorted({
+              str(PurePosixPath(path).parent)
+              for path in tracked if PurePosixPath(path).name == "package.json"
+          })
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"directories={json.dumps(directories)}\n")
+          PY
+
+  npm:
+    name: npm CI (${{ matrix.directory }})
+    needs: python
+    if: needs.python.outputs.npm-directories != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJSON(needs.python.outputs.npm-directories) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    env:
+      CI: 'true'
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Type check
+        run: npm run typecheck --if-present
+
+      - name: Test
+        run: npm run test --if-present
+
+  ci:
+    name: CI
+    if: always()
+    needs: [python, npm]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require successful checks
+        env:
+          PYTHON_RESULT: ${{ needs.python.result }}
+          NPM_RESULT: ${{ needs.npm.result }}
+        run: |
+          test "$PYTHON_RESULT" = success
+          test "$NPM_RESULT" = success || test "$NPM_RESULT" = skipped

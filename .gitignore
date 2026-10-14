@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+*-dist/
+
+# Local caches and logs
+.npm-cache/
+*.log
+
+# Environment and editor files
+.env
+.env.*
+!.env.example
+.DS_Store
+.vscode/
+.idea/
+
+# Native build output
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/build/

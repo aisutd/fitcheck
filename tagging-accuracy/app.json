@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "FitCheck Accuracy",
+    "slug": "fitcheck-tagging-accuracy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#F7F5FF"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F5FF"
+      },
+      "edgeToEdgeEnabled": true
+    }
+  }
+}

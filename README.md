@@ -23,3 +23,7 @@ docker compose ps
 ```
 
 This is a generic starter configuration. The team can add project-specific dependencies and startup commands later.
+
+## Feature Demos
+
+- `tagging-accuracy/` — Task 6: Catch the AI Being Unfair. A premium Expo/React Native tagging accuracy dashboard with demographic and clothing-dimension breakdowns, highlighted performance gaps, animated visualizations, and an AI accuracy information sheet.

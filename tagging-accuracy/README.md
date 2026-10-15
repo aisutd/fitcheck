@@ -22,6 +22,8 @@ Scan the QR code with Expo Go, or press `a`/`i` in the Expo terminal.
 - Animated SVG accuracy ring with a lavender, violet, midnight, and pearl visual system
 - Tap-to-switch dimension rail with animated metric reveals
 - AI Insights treatment and an animated blurred information sheet
+- JPG, PNG, and WebP outfit selection through Expo Image Picker
+- An animated **Analyze Bias** flow with demo findings and fairness recommendations
 
 ## Integrate the report
 
@@ -35,6 +37,13 @@ Copy `src/` into the FitCheck project, then register
 
 The temporary values are in `src/data/demoAccuracyReport.ts`. Keeping data outside the screen
 makes the eventual API replacement a one-line prop change.
+
+## Connect real bias analysis
+
+The upload UI calls `src/services/biasAnalysis.ts`. Its exported `analyzeBiasImage` function
+currently returns clearly labeled demonstration feedback. Replace that function body with the
+production model request and return the same `BiasAnalysisResult` shape; the screen and loading,
+error, and feedback states do not need to change.
 
 ## Add the floating button to Closet
 

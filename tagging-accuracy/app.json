@@ -16,6 +16,15 @@
         "backgroundColor": "#F7F5FF"
       },
       "edgeToEdgeEnabled": true
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow FitCheck to select an outfit photo for on-device AI bias analysis.",
+          "microphonePermission": false
+        }
+      ]
+    ]
   }
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AccuracyInfoButton } from '../components/AccuracyInfoButton';
+import { BiasDetectionCard } from '../components/BiasDetectionCard';
 import { CircularAccuracy } from '../components/CircularAccuracy';
 import { MetricRow } from '../components/MetricRow';
 import { colors } from '../theme';
@@ -76,6 +77,8 @@ export function TaggingAccuracyReportScreen({ report }: TaggingAccuracyReportScr
                 <View style={styles.insightScore}><Text style={styles.insightScoreText}>{weakest?.accuracy ?? '✓'}{weakest ? '%' : ''}</Text></View>
               </View>
             </LinearGradient>
+
+            <BiasDetectionCard />
 
             <View style={styles.exploreHeader}>
               <View><Text style={styles.sectionEyebrow}>EXPLORE THE SIGNAL</Text><Text style={styles.sectionTitle}>Accuracy by dimension</Text></View>

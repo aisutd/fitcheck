@@ -10,10 +10,11 @@ const STROKE = 12;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-type CircularAccuracyProps = { value: number };
+type CircularAccuracyProps = { value: number | null };
 
 export function CircularAccuracy({ value }: CircularAccuracyProps) {
-  const safeValue = Math.max(0, Math.min(100, value));
+  const hasValue = value !== null;
+  const safeValue = hasValue ? Math.max(0, Math.min(100, value)) : 0;
   const progress = useRef(new Animated.Value(0)).current;
   const [label, setLabel] = useState(0);
 
@@ -36,9 +37,9 @@ export function CircularAccuracy({ value }: CircularAccuracyProps) {
 
   return (
     <View
-      accessibilityLabel={`${safeValue}% overall accuracy`}
+      accessibilityLabel={hasValue ? `${safeValue}% overall accuracy` : 'No tests completed'}
       accessibilityRole="progressbar"
-      accessibilityValue={{ min: 0, max: 100, now: safeValue }}
+      accessibilityValue={hasValue ? { min: 0, max: 100, now: safeValue } : { text: 'No tests completed' }}
       style={styles.wrap}
     >
       <View style={styles.outerGlow} />
@@ -67,11 +68,20 @@ export function CircularAccuracy({ value }: CircularAccuracyProps) {
       </Svg>
       <View style={styles.center}>
         <Text style={styles.microLabel}>AI SCORE</Text>
-        <View style={styles.valueRow}>
-          <Text style={styles.value}>{label}</Text>
-          <Text style={styles.percent}>%</Text>
-        </View>
-        <Text style={styles.status}>high confidence</Text>
+        {hasValue ? (
+          <>
+            <View style={styles.valueRow}>
+              <Text style={styles.value}>{label}</Text>
+              <Text style={styles.percent}>%</Text>
+            </View>
+            <Text style={styles.status}>measured accuracy</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.emptyValue}>—</Text>
+            <Text style={styles.status}>No tests completed</Text>
+          </>
+        )}
       </View>
       <View style={styles.sparkOne} />
       <View style={styles.sparkTwo} />
@@ -95,6 +105,7 @@ const styles = StyleSheet.create({
     lineHeight: 66, fontVariant: ['tabular-nums'],
   },
   percent: { marginTop: 10, marginLeft: 3, color: colors.electric, fontSize: 20, fontWeight: '900' },
+  emptyValue: { color: colors.surface, fontSize: 57, fontWeight: '900', lineHeight: 66 },
   status: { marginTop: -3, color: colors.lavender, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 },
   sparkOne: {
     position: 'absolute', top: 25, right: 30, width: 6, height: 6, borderRadius: 3,

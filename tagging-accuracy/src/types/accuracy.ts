@@ -13,10 +13,9 @@ export type AccuracyDimension = {
 };
 
 export type AccuracyReport = {
-  isDemo: boolean;
   modelName: string;
-  testedAt: string;
-  overallAccuracy: number;
+  testedAt: string | null;
+  overallAccuracy: number | null;
   totalPhotos: number;
   lowAccuracyThreshold: number;
   dimensions: AccuracyDimension[];

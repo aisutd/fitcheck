@@ -5,16 +5,24 @@ export type BiasImageInput = {
 };
 
 export type BiasFinding = {
-  id: string;
+  category: 'clothing_recognition' | 'cultural_representation' | 'fashion_inclusivity' | 'stereotyping';
   label: string;
-  status: 'balanced' | 'watch';
-  detail: string;
+  status: 'none_observed' | 'potential_concern' | 'insufficient_evidence';
+  confidence: 'low' | 'medium' | 'high';
+  evidence: string[];
+  explanation: string;
+  recommendation: string;
 };
 
 export type BiasAnalysisResult = {
-  isDemo: boolean;
-  fairnessScore: number;
+  analysisId: string;
+  model: string;
+  analyzedAt: string;
+  evidenceScope: 'single_image';
+  riskScore: number | null;
+  scoreRationale: string | null;
   summary: string;
+  scopeNote: string;
   findings: BiasFinding[];
   recommendations: string[];
 };

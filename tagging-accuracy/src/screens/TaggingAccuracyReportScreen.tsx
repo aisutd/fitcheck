@@ -19,6 +19,7 @@ export function TaggingAccuracyReportScreen({ report }: TaggingAccuracyReportScr
   const [selectedId, setSelectedId] = useState<AccuracyDimension['id']>('categories');
   const intro = useRef(new Animated.Value(0)).current;
   const selectedDimension = report.dimensions.find((dimension) => dimension.id === selectedId) ?? report.dimensions[0];
+  const hasTests = report.totalPhotos > 0 && report.overallAccuracy !== null;
   const lowPerformers = report.dimensions.flatMap((dimension) =>
     dimension.metrics.filter((metric) => metric.accuracy < report.lowAccuracyThreshold),
   );
@@ -43,7 +44,7 @@ export function TaggingAccuracyReportScreen({ report }: TaggingAccuracyReportScr
                 <Text style={styles.eyebrow}>FITCHECK / AI AUDIT</Text>
                 <Text style={styles.title}>Tagging intelligence</Text>
               </View>
-              <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>DEMO</Text></View>
+              <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>REAL DATA</Text></View>
             </View>
 
             <LinearGradient colors={['#111126', '#191631', '#231B46']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={styles.hero}>
@@ -54,11 +55,11 @@ export function TaggingAccuracyReportScreen({ report }: TaggingAccuracyReportScr
               </View>
               <CircularAccuracy value={report.overallAccuracy} />
               <View style={styles.heroMeta}>
-                <View style={styles.metaItem}><Text style={styles.metaValue}>{report.totalPhotos.toLocaleString()}</Text><Text style={styles.metaLabel}>TEST PHOTOS</Text></View>
+                <View style={styles.metaItem}><Text style={styles.metaValue}>{hasTests ? report.totalPhotos.toLocaleString() : '—'}</Text><Text style={styles.metaLabel}>TEST PHOTOS</Text></View>
                 <View style={styles.metaDivider} />
-                <View style={styles.metaItem}><Text style={styles.metaValue}>{lowPerformers.length}</Text><Text style={styles.metaLabel}>FLAGS FOUND</Text></View>
+                <View style={styles.metaItem}><Text style={styles.metaValue}>{hasTests ? lowPerformers.length : '—'}</Text><Text style={styles.metaLabel}>FLAGS FOUND</Text></View>
                 <View style={styles.metaDivider} />
-                <View style={styles.metaItem}><Text style={styles.metaDate}>{report.testedAt}</Text><Text style={styles.metaLabel}>LAST AUDIT</Text></View>
+                <View style={styles.metaItem}><Text style={styles.metaDate}>{report.testedAt ?? 'Not tested'}</Text><Text style={styles.metaLabel}>LAST AUDIT</Text></View>
               </View>
             </LinearGradient>
 
@@ -67,14 +68,16 @@ export function TaggingAccuracyReportScreen({ report }: TaggingAccuracyReportScr
                 <View style={styles.insightIcon}><Text style={styles.insightSpark}>✦</Text></View>
                 <View style={styles.insightCopy}>
                   <Text style={styles.insightEyebrow}>AI INSIGHT</Text>
-                  <Text style={styles.insightTitle}>{weakest ? `${weakest.label} needs a closer look` : 'Performance is balanced'}</Text>
+                  <Text style={styles.insightTitle}>{hasTests ? (weakest ? `${weakest.label} needs a closer look` : 'No measured gaps') : 'No tests completed'}</Text>
                   <Text style={styles.insightBody}>
-                    {weakest
+                    {!hasTests
+                      ? 'Run a labeled, human-reviewed evaluation set before drawing conclusions about model accuracy or group disparities.'
+                      : weakest
                       ? `Recognition is ${weakest.accuracy}%—below the ${report.lowAccuracyThreshold}% fairness watch line. More varied training photos may help.`
                       : 'No tested group is below the current fairness watch line.'}
                   </Text>
                 </View>
-                <View style={styles.insightScore}><Text style={styles.insightScoreText}>{weakest?.accuracy ?? '✓'}{weakest ? '%' : ''}</Text></View>
+                <View style={styles.insightScore}><Text style={styles.insightScoreText}>{hasTests ? (weakest?.accuracy ?? '✓') : '—'}{hasTests && weakest ? '%' : ''}</Text></View>
               </View>
             </LinearGradient>
 
@@ -110,14 +113,19 @@ export function TaggingAccuracyReportScreen({ report }: TaggingAccuracyReportScr
                 <View style={styles.signalMark}><Text style={styles.signalMarkText}>{dimensionSymbols[selectedDimension.id]}</Text></View>
               </View>
               <View style={styles.metrics} key={selectedDimension.id}>
-                {selectedDimension.metrics.map((metric) => (
+                {selectedDimension.metrics.length > 0 ? selectedDimension.metrics.map((metric) => (
                   <MetricRow key={metric.id} lowAccuracyThreshold={report.lowAccuracyThreshold} metric={metric} />
-                ))}
+                )) : (
+                  <View style={styles.emptyMetrics}>
+                    <Text style={styles.emptyMetricsTitle}>No tests completed</Text>
+                    <Text style={styles.emptyMetricsBody}>Category results require labeled predictions and human-reviewed ground truth.</Text>
+                  </View>
+                )}
               </View>
-              <View style={styles.legend}>
+              {hasTests ? <View style={styles.legend}>
                 <View style={styles.legendItem}><View style={styles.goodLegendDot} /><Text style={styles.legendText}>On target</Text></View>
                 <View style={styles.legendItem}><View style={styles.lowLegendDot} /><Text style={styles.legendText}>Below {report.lowAccuracyThreshold}% watch line</Text></View>
-              </View>
+              </View> : null}
             </LinearGradient>
 
             <View style={styles.methodRow}>
@@ -127,7 +135,6 @@ export function TaggingAccuracyReportScreen({ report }: TaggingAccuracyReportScr
                 <Text style={styles.methodBody}>Accuracy = correct AI tags ÷ tested tags × 100. Group views reveal gaps that one overall score can hide.</Text>
               </View>
             </View>
-            {report.isDemo ? <Text style={styles.demoNote}>DEMONSTRATION DATA · NOT LIVE MODEL RESULTS</Text> : null}
           </Animated.View>
         </ScrollView>
         <AccuracyInfoButton lowAccuracyThreshold={report.lowAccuracyThreshold} totalPhotos={report.totalPhotos} />
@@ -192,6 +199,9 @@ const styles = StyleSheet.create({
   signalMark: { width: 37, height: 37, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#373252', borderRadius: 13, backgroundColor: '#201D3B' },
   signalMarkText: { color: colors.electric, fontSize: 17 },
   metrics: { marginTop: 3 },
+  emptyMetrics: { alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#302B4B', borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.035)', paddingHorizontal: 20, paddingVertical: 24 },
+  emptyMetricsTitle: { color: colors.surface, fontSize: 13, fontWeight: '900' },
+  emptyMetricsBody: { marginTop: 5, color: '#858096', fontSize: 9, lineHeight: 14, textAlign: 'center' },
   legend: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)', marginTop: 4, paddingHorizontal: 8, paddingTop: 13 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   goodLegendDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.electric },
@@ -203,5 +213,4 @@ const styles = StyleSheet.create({
   methodCopy: { flex: 1 },
   methodTitle: { color: colors.ink, fontSize: 13, fontWeight: '900' },
   methodBody: { marginTop: 4, color: colors.muted, fontSize: 10, lineHeight: 15 },
-  demoNote: { marginTop: 20, color: '#9A93AA', fontSize: 8, fontWeight: '900', letterSpacing: 1.1, textAlign: 'center' },
 });

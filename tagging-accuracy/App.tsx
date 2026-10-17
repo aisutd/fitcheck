@@ -1,14 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 
-import { demoAccuracyReport } from './src/data/demoAccuracyReport';
+import { emptyAccuracyReport } from './src/data/emptyAccuracyReport';
 import { TaggingAccuracyReportScreen } from './src/screens/TaggingAccuracyReportScreen';
 
 export default function App() {
   return (
     <View style={styles.app}>
       <StatusBar style="dark" />
-      <TaggingAccuracyReportScreen report={demoAccuracyReport} />
+      <TaggingAccuracyReportScreen report={emptyAccuracyReport} />
     </View>
   );
 }

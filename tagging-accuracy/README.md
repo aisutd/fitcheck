@@ -2,7 +2,7 @@
 
 A focused React Native + TypeScript implementation of Task 6, compatible with Expo Go.
 
-## Run the demo
+## Run the app
 
 ```bash
 npm install
@@ -18,12 +18,13 @@ Scan the QR code with Expo Go, or press `a`/`i` in the Expo terminal.
 - Accessible progress bars and a compact comparison chart
 - Orange “Needs work” treatment for results below a configurable threshold
 - A reusable floating ⓘ button with an accuracy explanation modal
-- Clearly labeled demonstration data, isolated from the UI
 - Animated SVG accuracy ring with a lavender, violet, midnight, and pearl visual system
 - Tap-to-switch dimension rail with animated metric reveals
 - AI Insights treatment and an animated blurred information sheet
 - JPG, PNG, and WebP outfit selection through Expo Image Picker
-- An animated **Analyze Bias** flow with demo findings and fairness recommendations
+- An animated **Analyze Bias** flow backed by the secure Gemini API server in `../server`
+- Evidence-qualified category findings that separate potential concerns from confirmed bias
+- An honest empty state when no labeled accuracy tests have been completed
 
 ## Integrate the report
 
@@ -35,15 +36,16 @@ Copy `src/` into the FitCheck project, then register
 <TaggingAccuracyReportScreen report={accuracyReportFromApi} />
 ```
 
-The temporary values are in `src/data/demoAccuracyReport.ts`. Keeping data outside the screen
-makes the eventual API replacement a one-line prop change.
+Until a labeled evaluation pipeline supplies results, `src/data/emptyAccuracyReport.ts` displays
+**No tests completed**. A single uploaded image is not counted as an accuracy test because it has no
+human-reviewed ground truth.
 
 ## Connect real bias analysis
 
-The upload UI calls `src/services/biasAnalysis.ts`. Its exported `analyzeBiasImage` function
-currently returns clearly labeled demonstration feedback. Replace that function body with the
-production model request and return the same `BiasAnalysisResult` shape; the screen and loading,
-error, and feedback states do not need to change.
+The upload UI calls `src/services/biasAnalysis.ts`, which sends the image to the backend URL in
+`EXPO_PUBLIC_API_BASE_URL`. Start `../server` with a server-side `GEMINI_API_KEY`; never place that
+key in the Expo bundle. The backend validates the file, invokes Gemini 3.8 Flash with a structured
+response schema, and returns four required evaluation categories.
 
 ## Add the floating button to Closet
 
@@ -69,6 +71,7 @@ Accuracy values use a `0–100` scale. The UI clamps progress-bar widths defensi
 poor-performing groups from `lowAccuracyThreshold`; no category names or scores are hard-coded into
 the screen.
 
-For production, return the same `AccuracyReport` shape from the model-evaluation endpoint and set
-`isDemo` to `false`. The `sampleCount` for a group is allowed to differ from the overall photo count
-because one evaluated photo can contribute to several independent dimensions.
+For production aggregate statistics, return the same `AccuracyReport` shape from a labeled
+model-evaluation endpoint. `overallAccuracy` and `testedAt` stay `null` until tests exist. The
+`sampleCount` for a group may differ from the overall photo count because one evaluated photo can
+contribute to several independent dimensions.

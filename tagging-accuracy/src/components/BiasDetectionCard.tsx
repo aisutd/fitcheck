@@ -71,8 +71,8 @@ export function BiasDetectionCard() {
         tension: 70,
         useNativeDriver: true,
       }).start();
-    } catch {
-      setError('The analysis could not be completed. Please try again.');
+    } catch (analysisError) {
+      setError(analysisError instanceof Error ? analysisError.message : 'The analysis could not be completed. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -136,7 +136,9 @@ export function BiasDetectionCard() {
           </LinearGradient>
         </Pressable>
 
-        <Text style={styles.privacyNote}>Your selected photo stays on this device in demonstration mode.</Text>
+        <Text style={styles.privacyNote}>
+          The photo is sent to the configured AI service for analysis. Upload only images you have permission to use.
+        </Text>
 
         {result ? (
           <Animated.View
@@ -147,23 +149,36 @@ export function BiasDetectionCard() {
           >
             <View style={styles.resultHeader}>
               <View>
-                <Text style={styles.resultEyebrow}>{result.isDemo ? 'DEMO AI FEEDBACK' : 'AI FEEDBACK'}</Text>
+                <Text style={styles.resultEyebrow}>AI FEEDBACK · {result.model}</Text>
                 <Text style={styles.resultTitle}>Fairness signal</Text>
               </View>
-              <View style={styles.score}><Text style={styles.scoreValue}>{result.fairnessScore}</Text><Text style={styles.scoreUnit}>/100</Text></View>
+              <View style={styles.score}>
+                <Text style={result.riskScore === null ? styles.unscoredValue : styles.scoreValue}>
+                  {result.riskScore === null ? 'Not scored' : result.riskScore}
+                </Text>
+                {result.riskScore === null ? null : <Text style={styles.scoreUnit}>/100 risk</Text>}
+              </View>
             </View>
             <Text style={styles.summary}>{result.summary}</Text>
+            <Text style={styles.scopeNote}>{result.scopeNote}</Text>
+            {result.scoreRationale ? <Text style={styles.scoreRationale}>{result.scoreRationale}</Text> : null}
 
             <View style={styles.findings}>
               {result.findings.map((finding) => (
-                <View key={finding.id} style={styles.finding}>
-                  <View style={[styles.findingDot, finding.status === 'watch' && styles.findingDotWatch]} />
+                <View key={finding.category} style={styles.finding}>
+                  <View style={[styles.findingDot, finding.status === 'potential_concern' && styles.findingDotWatch]} />
                   <View style={styles.findingCopy}>
                     <Text style={styles.findingLabel}>{finding.label}</Text>
-                    <Text style={styles.findingDetail}>{finding.detail}</Text>
+                    <Text style={styles.findingDetail}>{finding.explanation}</Text>
+                    {finding.evidence.map((item) => <Text key={item} style={styles.evidence}>• {item}</Text>)}
+                    <Text style={styles.findingRecommendation}>{finding.recommendation}</Text>
                   </View>
-                  <Text style={[styles.findingStatus, finding.status === 'watch' && styles.findingStatusWatch]}>
-                    {finding.status === 'watch' ? 'WATCH' : 'BALANCED'}
+                  <Text style={[styles.findingStatus, finding.status === 'potential_concern' && styles.findingStatusWatch]}>
+                    {finding.status === 'potential_concern'
+                      ? 'POTENTIAL'
+                      : finding.status === 'none_observed'
+                        ? 'NONE SEEN'
+                        : 'LIMITED'}
                   </Text>
                 </View>
               ))}
@@ -223,8 +238,11 @@ const styles = StyleSheet.create({
   resultTitle: { marginTop: 3, color: colors.surface, fontSize: 16, fontWeight: '900' },
   score: { flexDirection: 'row', alignItems: 'baseline', borderRadius: 999, backgroundColor: 'rgba(141,231,255,0.11)', paddingHorizontal: 10, paddingVertical: 7 },
   scoreValue: { color: colors.electric, fontSize: 16, fontWeight: '900' },
+  unscoredValue: { color: colors.lavender, fontSize: 9, fontWeight: '900', textTransform: 'uppercase' },
   scoreUnit: { color: '#9690A8', fontSize: 8, fontWeight: '800' },
   summary: { marginTop: 10, color: '#B9B4C8', fontSize: 10, lineHeight: 15 },
+  scopeNote: { marginTop: 9, borderLeftWidth: 2, borderLeftColor: colors.lavender, paddingLeft: 9, color: '#918BA3', fontSize: 9, lineHeight: 14 },
+  scoreRationale: { marginTop: 8, color: colors.electric, fontSize: 8, lineHeight: 12 },
   findings: { marginTop: 11, gap: 8 },
   finding: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)', paddingTop: 9 },
   findingDot: { width: 6, height: 6, marginTop: 4, borderRadius: 3, backgroundColor: colors.electric },
@@ -232,6 +250,8 @@ const styles = StyleSheet.create({
   findingCopy: { flex: 1 },
   findingLabel: { color: colors.surface, fontSize: 10, fontWeight: '900' },
   findingDetail: { marginTop: 2, color: '#858096', fontSize: 8, lineHeight: 12 },
+  evidence: { marginTop: 3, color: '#A9A3B9', fontSize: 8, lineHeight: 12 },
+  findingRecommendation: { marginTop: 5, color: colors.lavender, fontSize: 8, lineHeight: 12 },
   findingStatus: { color: colors.electric, fontSize: 7, fontWeight: '900', letterSpacing: 0.5 },
   findingStatusWatch: { color: colors.amber },
   recommendationBox: { marginTop: 13, borderRadius: 15, backgroundColor: 'rgba(121,87,255,0.13)', padding: 11 },

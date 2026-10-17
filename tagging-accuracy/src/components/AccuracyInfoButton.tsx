@@ -81,7 +81,9 @@ export function AccuracyInfoButton({ totalPhotos, lowAccuracyThreshold = 75, sty
                   <Text style={styles.formulaText}>tested photos</Text><Text style={styles.formulaSymbol}>× 100</Text>
                 </LinearGradient>
                 <Text style={styles.body}>
-                  This report uses {totalPhotos.toLocaleString()} photos. Results below {lowAccuracyThreshold}% glow coral so performance gaps stand out. Lighting, image quality, and test-set representation can all affect the score.
+                  {totalPhotos > 0
+                    ? `This report uses ${totalPhotos.toLocaleString()} photos. Results below ${lowAccuracyThreshold}% glow coral so performance gaps stand out. Lighting, image quality, and test-set representation can all affect the score.`
+                    : 'No tests have been completed. Accuracy will appear only after predictions are compared with human-reviewed answers across a labeled evaluation set.'}
                 </Text>
                 <Text style={styles.disclaimer}>AI can make mistakes—review important details before saving.</Text>
                 <Pressable

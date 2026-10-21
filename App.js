@@ -4,13 +4,16 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    FlatList,
     ScrollView,
     StatusBar,
     Alert,
     Modal,
     TextInput,
 } from 'react-native';
+
+//import { CameraView, useCameraPermissions } from 'expo-camera';
+
+//import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CATEGORIES = [
     "All",
@@ -19,6 +22,7 @@ const CATEGORIES = [
     "Dresses",
     "Outerwear",
     "Accessories",
+    "Suits",
     "Shoes",
 ];
 
@@ -56,13 +60,85 @@ const DESIGNS = [
     "Multicolor",
     "Other",
 ]
+
+const LAUNDRY_STATUSES = [
+    'All',
+    'Clean',
+    'Dirty',
+    'In Washer',
+]
+
+const MATERIALS = [
+    'All',
+    'Cotton',
+    'Polyester',
+    'Fleece',
+    'Linen',
+    'Leather',
+    'Wool',
+    'Silk',
+    'Jersey',
+    'Denim',
+    'Other',
+]
+const TIMES_WORN = [
+    'All',
+    'Never Worn',
+    'Worn Once',
+    '2-5',
+    '6-10',
+    '11-20',
+    '20+',
+]
+
+function matchesTimesWorn(count, selection){
+    const worn = Number(count) || 0
+    switch (selection){
+        case 'Never Worn': return worn === 0;
+        case 'Worn Once': return worn === 1;
+        case '2-5': return worn >=2 && worn <=5;
+        case '6-10': return worn >=6 && worn <= 10;
+        case '11-20': return worn >=11 && worn <=20;
+        case '20+': return worn > 20;
+        default: return true;
+    }
+}
+
 export default function App() {
-    
-    {/* Screens 
+
+    {/* Screens
 
         const [home, setHome] = useState(['closet']);
-        
+
     */}
+
+    {/*
+        Camera
+
+        const [permission, requestPermission] = useCameraPermissions();
+        const [scanned, setScanned] = useState(false);
+
+
+        if (!permission) {
+            // Camera permissions are still loading
+            return <View style={styles.container}><Text>Loading permissions...</Text></View>;
+        }
+
+        if (!permission.granted) {
+            // Camera permissions are not granted yet
+            return (
+        <   View style={styles.container}>
+            <Text style={styles.text}>We need your permission to show the camera</Text>
+            <Button onPress={requestPermission} title="grant permission" />
+            </View>
+        );
+
+        const handleBarcodeScanned = ({ type, data }) => {
+        setScanned(true);
+        alert(`Item scanned! Type: ${type} | Data: ${data}`);
+        };
+    */}
+
     {/* Clothes */}
     const [clothes, setClothes] = useState([]);
 
@@ -80,11 +156,33 @@ export default function App() {
     const [category, setCategory] = useState('');
     const [color, setColor] = useState('');
     const [design, setDesign] = useState('');
+    const [material, setMaterial] = useState('');
+    const [timesWorn, setTimesWorn] = useState('0');
+    const [laundryStatus, setLaundryStatus] = useState('Clean');
+
+    {/* Filter */}
+    const [showFilters, setShowFilters] = useState(false);
+    const [openFilters, setOpenFilters] = useState([]);
+
+    {/* Filter filters */}
+    const [selectedLaundryStatus, setSelectedLaundryStatus] = useState('All');
+    const [selectedMaterial, setSelectedMaterial] = useState('All');
+    const [selectedTimesWorn, setSelectedTimesWorn] = useState('All');
+
+
+    //filter
+
 
     //adding a clothing item
     const addClothing = () => {
-        if (!name.trim()){
-            Alert.alert('Error', 'Please enter a name for the clothing item.');
+        if (!name.trim() || !category || !color || !design || !material){
+            Alert.alert('Missing information', 'Please enter a name, select a category, color, design, and material.');
+            return;
+        }
+
+        const count = Number(timesWorn);
+        if(!Number.isInteger(count) || count < 0){
+            Alert.alert('Invalid Times Worn', 'Enter a whole number that is 0 or greater.');
             return;
         }
 
@@ -94,15 +192,21 @@ export default function App() {
             category: category.trim(),
             color: color.trim(),
             design: design.trim(),
+            material: material.trim(),
+            timesWorn: count,
+            laundryStatus: laundryStatus,
         }
 
-        setClothes([...clothes, newClothingItem]);
+        setClothes((previousClothes) => [...previousClothes, newClothingItem]);
 
         //Reset the clothing input fields and close the modal
         setName('');
         setCategory('');
         setColor('');
         setDesign('');
+        setMaterial('');
+        setTimesWorn('0');
+        setLaundryStatus('Clean');
 
         setIsModalVisible(false);
     };
@@ -119,7 +223,9 @@ export default function App() {
                     style: 'destructive',
                     onPress: () => {
                         setClothes(
-                        clothes.filter((item) => item.id !== selectedClothes.id)
+                            (previousClothes) =>
+                                previousClothes.filter(
+                                    (item) => item.id !== id)
                         );
                     setSelectedClothes(null);
                     },
@@ -133,8 +239,13 @@ export default function App() {
             const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
             const matchesColor = selectedColor === 'All' || item.color === selectedColor;
             const matchesDesign = selectedDesign === 'All' || item.design === selectedDesign;
+            const matchesMaterial = selectedMaterial === 'All' || item.material === selectedMaterial;
+            const matchesLaundry = selectedLaundryStatus === 'All' || item.laundryStatus === selectedLaundryStatus;
+            const matchesWorn = matchesTimesWorn(item.timesWorn, selectedTimesWorn);
 
-            return matchesCategory && matchesColor && matchesDesign;
+
+
+            return matchesCategory && matchesColor && matchesDesign && matchesMaterial && matchesLaundry && matchesWorn;
         });
     };
 
@@ -143,7 +254,95 @@ export default function App() {
             setSelectedCategory('All');
             setSelectedColor('All');
             setSelectedDesign('All');
+            setSelectedMaterial('All');
+            setSelectedTimesWorn('All');
+            setSelectedLaundryStatus('All');
         };
+
+    const renderOptions = (options, value, onChange) => {
+        return (
+            <View style = {styles.optionGrid}>
+
+                {options.filter((item) => item !== 'All').map((item) => (
+                    <TouchableOpacity key = {item}
+                    style = {[
+                        styles.optionButton,
+                        value === item && styles.selectedOptionButton,
+                    ]}
+                    onPress={() => onChange(item)}
+                    >
+                        <Text style = {[
+                            styles.optionButtonText,
+                            value === item && styles.selectedOptionButtonText,
+                        ]}> {item} </Text>
+
+                    </TouchableOpacity>
+                ))}
+            </View>
+        );
+    };
+    const renderFilterSection = ({
+        title,
+        options,
+        value,
+        onChange,
+    }) => {
+    const isOpen = openFilters.includes(title);
+    return (
+        <View style={styles.filterSection} key={title}>
+            <TouchableOpacity
+                style={styles.filterSectionHeader}
+                onPress={() => {
+                    setOpenFilters((previous) =>
+                        previous.includes(title)
+                            ? previous.filter((item) => item !== title)
+                            : [...previous, title]
+                    );
+                }}
+            >
+                <Text style={styles.filterSectionTitle}>
+                    {title}
+                </Text>
+
+                <View style={styles.filterSectionRight}>
+                    <Text style={styles.filterSelection}>
+                        {value}
+                    </Text>
+
+                    <Text style={styles.arrow}>
+                        {isOpen ? '▲' : '▼'}
+                    </Text>
+                </View>
+            </TouchableOpacity>
+
+            {isOpen && (
+                <View style={styles.filterChoices}>
+                    {options.map((item) => (
+                        <TouchableOpacity
+                            key={item}
+                            style={[
+                                styles.filterButton,
+                                value === item && styles.selectedFilterButton,
+                            ]}
+                            onPress={() => onChange(item)}
+                        >
+                            <Text
+                                style={[
+                                    styles.filterText,
+                                    value === item &&
+                                        styles.selectedFilterButtonText,
+                                ]}
+                            >
+                                {item}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+            </View>
+        );
+    };
+        const filteredClothes = filteringClothes();
 
         return (
             <View style={styles.container}>
@@ -183,109 +382,121 @@ export default function App() {
             ))}
             </ScrollView>
 
-            {/* Filtering Colors */}
-            <Text style = {styles.filterTitle}> Colors </Text>
-            <ScrollView 
-            horizontal  = {true}
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterScroll}
-            contentContainerStyle={styles.filterRow}
-            >
-            {COLORS.map((item) => (
-                <TouchableOpacity
-                    key={item}
-                    style={[
-                        styles.filterButton,
-                        selectedColor === item && styles.selectedFilterButton,
-                    ]}
-                    onPress={() => setSelectedColor(item)}
-                >
-                    <Text
-                        style={[
-                            styles.filterText,
-                            selectedColor === item && styles.selectedFilterButtonText,
-                        ]}
-                        >
-                            {item}
-                        </Text>
-                        </TouchableOpacity>
-            ))}
-            </ScrollView>
+            <TouchableOpacity
+            style = {styles.filtersToggle}
+            onPress={() => setShowFilters(!showFilters)}>
 
-            {/* Filtering designs */}
-            <Text style = {styles.filterTitle}> Designs </Text>
-            <ScrollView 
-            horizontal  = {true}
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterScroll}
-            contentContainerStyle={styles.filterRow}
-            >
-            {DESIGNS.map((item) => (
-                <TouchableOpacity
-                    key={item}
-                    style={[
-                        styles.filterButton,
-                        selectedDesign === item && styles.selectedFilterButton,
-                    ]}
-                    onPress={() => setSelectedDesign(item)}
-                >
-                    <Text
-                        style={[
-                            styles.filterText,
-                            selectedDesign === item && styles.selectedFilterButtonText,
-                        ]}
-                        >
-                            {item}
-                        </Text>
-                        </TouchableOpacity>
-            ))}
-            </ScrollView>
+                <Text style = {styles.filtersToggleText}>
+                    Filters
+                </Text>
 
+                <Text style = {styles.filtersToggleText}>
+                    {showFilters ? '▲' : '▼'}
+                </Text>
+            </TouchableOpacity>
+
+
+            {
+                showFilters && (
+                    <View style = {styles.filtersPanel}>
+                        <ScrollView
+                            nestedScrollEnabled={true}
+                            showsVerticalScrollIndicator={true}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            {renderFilterSection({
+                                title: 'Colors',
+                                options: COLORS,
+                                value: selectedColor,
+                                onChange: setSelectedColor,
+                            })}
+
+                            {renderFilterSection({
+                                title: 'Designs',
+                                options: DESIGNS,
+                                value: selectedDesign,
+                                onChange: setSelectedDesign,
+                            })}
+
+                            {renderFilterSection({
+                                title: 'Materials',
+                                options: MATERIALS,
+                                value: selectedMaterial,
+                                onChange: setSelectedMaterial,
+                            })}
+
+                            {renderFilterSection({
+                                title: 'Times Worn',
+                                options: TIMES_WORN,
+                                value: selectedTimesWorn,
+                                onChange: setSelectedTimesWorn,
+                            })}
+
+                            {renderFilterSection({
+                                title: 'Laundry Status',
+                                options: LAUNDRY_STATUSES,
+                                value: selectedLaundryStatus,
+                                onChange: setSelectedLaundryStatus,
+                            })}
+                        </ScrollView>
+                    </View>
+                )
+            }
             <View style = {styles.resultsRow}>
                 <Text style = {styles.resultsText}>
-                    {filteringClothes().length} Results
+                    {filteredClothes.length} Results
                 </Text>
-                <TouchableOpacity onPress = {() => resetFilters()}>
-                    <Text style = {styles.resetText}> Reset Filters </Text>
+
+                <TouchableOpacity onPress = {resetFilters}>
+                    <Text style={styles.resetText}>Reset Filters</Text>
                 </TouchableOpacity>
             </View>
-            <ScrollView 
+
+            <ScrollView
             style = {styles.clothesScroll}
-            contentContainerStyle = {styles.clothingContent}
-            showsVerticalScrollIndicator = {true}
+            contentContainerStyle={styles.clothingContent}
+            showsVerticalScrollIndicator={true}
             >
                 <View style = {styles.clothingGrid}>
-                    {filteringClothes().map((item) => (
-                        <View key={item.id}>
-                        <TouchableOpacity
+                    {filteredClothes.map((item) => (
+                        <View
+                        key = {item.id}
+                        style = {styles.clothingGridItem}
+                        >
+                            <TouchableOpacity
                             style = {styles.clothingCard}
-                            onPress = {() => {
-                                setSelectedClothes(item)}}>
-                        <View style = {styles.imagePlaceholder}>
-                        <Text style = {styles.placeHolderText}>
-                            {item.name}
-                        </Text>
-                        </View>
-                        </TouchableOpacity>
-                        
-                        <Text style = {styles.clothingName}>
-                            {item.name}
-                        </Text>
-                        <Text style = {styles.clothingDetails}>
-                            {item.category} | {item.color} | {item.design}
-                        </Text>
-                        </View>
+                            onPress={() => {
+                                setSelectedClothes(item);
+                            }}
+                            >
+                                <View style = {styles.imagePlaceholder}>
+                                    <Text style = {styles.imagePlaceholderText}>
+                                        {item.name}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <Text style = {styles.clothingName}>
+                                {item.name}
+                            </Text>
+                             <Text style = {styles.clothingDetails}>
+                                {item.category} | {item.color} | {item.design}
+                            </Text>
+                    </View>
                     ))}
                 </View>
 
-                {filteringClothes().length === 0 && (
+                {filteredClothes.length === 0 && (
                     <View style = {styles.emptyContainer}>
                         <Text style = {styles.emptyText}>
                             No clothing items match the selected filters.
                         </Text>
                     </View>
                 )}
-            </ScrollView>                    
+
+            </ScrollView>
+
+
             <TouchableOpacity
                 style = {styles.addButton}
                 onPress = {() => setIsModalVisible(true)}
@@ -293,185 +504,260 @@ export default function App() {
                 <Text style = {styles.addButtonText}> + Add Clothing Item </Text>
             </TouchableOpacity>
 
-            <Modal visible = {isModalVisible} 
-            transparent = {true}
-            animationType = "slide"
-            onRequestClose = {() => setIsModalVisible(false)}
+
+            <Modal
+                visible={isModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setIsModalVisible(false)}
             >
-                    <View style = {styles.modalOverlay}>
-                        <View style = {styles.modalContent}>
-                            <ScrollView
-                                showsVerticalScrollIndicator={true}
-                                keyboardShouldPersistTaps="handled"
-                            >
-                                <Text style = {styles.modalTitle}> Add Clothing Item </Text>
-                                <Text style = {styles. inputLabel}> Clothing Name </Text>
-                                <TextInput
-                                    style = {styles.input}
-                                    placeholder = "Ex: Blue T-Shirt"
-                                    value = {name}
-                                    onChangeText = {setName}
-                                />
 
-                            <Text style = {styles.inputLabel}> Category </Text>
+                <View style={styles.modalOverlay}>
 
-                            <View style = {styles.optionGrid}>
-                                {CATEGORIES.filter((item) => item !== 'All').map((item) => (
-                                    <TouchableOpacity
-                                        key = {item}
-                                        style = {[
-                                            styles.optionButton,
-                                            category === item && styles.selectedOptionButton,
-                                        ]}
-                                        onPress = {() => setCategory(item)}
-                                    >
-                                        <Text
-                                            style = {[
-                                                styles.optionButtonText,
-                                                category === item && styles.selectedOptionButtonText,
-                                            ]}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                            <Text style = {styles.inputLabel}> Color </Text>
-                            <View style = {styles.optionGrid}>
-                                {COLORS.filter((item) => item !== 'All').map((item) => (
-                                    <TouchableOpacity
-                                        key = {item}
-                                        style = {[
-                                            styles.optionButton,
-                                            color === item && styles.selectedOptionButton,
-                                        ]}
-                                        onPress = {() => setColor(item)}
-                                    >
-                                        <Text
-                                            style = {[
-                                                styles.optionButtonText,
-                                                color === item && styles.selectedOptionButtonText,
-                                            ]}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                            <Text style = {styles.inputLabel}> Design </Text>
-                            <View style = {styles.optionGrid}>
-                                {DESIGNS.filter((item) => item !== 'All').map((item) => (
-                                    <TouchableOpacity
-                                        key = {item}
-                                        style = {[
-                                            styles.optionButton,
-                                            design === item && styles.selectedOptionButton,
-                                        ]}
-                                        onPress = {() => setDesign(item)}
-                                    >
-                                        <Text
-                                            style = {[
-                                                styles.optionButtonText,
-                                                design === item && styles.selectedOptionButtonText,
-                                            ]}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                            
-                            <TouchableOpacity 
-                            style = {styles.saveButton}
-                            onPress = {addClothing}
-                            >
-                                <Text style = {styles.saveButtonText}> Save </Text>
-                            </TouchableOpacity>
-                            
-                            <TouchableOpacity 
-                            style = {styles.cancelButton}
-                            onPress = {() => setIsModalVisible(false)}
-                            >
-                                <Text style = {styles.cancelButtonText}> Cancel </Text>
-                            </TouchableOpacity>
-                            </ScrollView>
+                    <View style={styles.modalContent}>
 
-                        </View>
-                    </View>
-            </Modal>
-
-            <Modal visible = {selectedClothes !== null}
-            transparent = {true}
-            animationType = "slide"
-            onRequestClose = {() => setSelectedClothes(null)}
-            >
-                <View style = {styles.modalOverlay}>
-                    <View style = {styles.modalContent}>
                         <ScrollView
                             showsVerticalScrollIndicator={true}
                             keyboardShouldPersistTaps="handled"
                         >
-                            <Text style = {styles.modalTitle}> Clothing Item Details </Text>
-                            {selectedClothes && (
-                                <>
-                                    <Text style = {styles.detailLabel}> Name: </Text>
-                                    <Text style = {styles.detailValue}> {selectedClothes.name} </Text>
-                                    <Text style = {styles.detailLabel}> Category: </Text>
-                                    <Text style = {styles.detailValue}> {selectedClothes.category} </Text>
-                                    <Text style = {styles.detailLabel}> Color: </Text>
-                                    <Text style = {styles.detailValue}> {selectedClothes.color} </Text>
-                                    <Text style = {styles.detailLabel}> Design: </Text>
-                                    <Text style = {styles.detailValue}> {selectedClothes.design} </Text>
-                                    <TouchableOpacity 
-                                    style = {styles.deleteButton}
-                                    onPress = {() => deleteClothing(selectedClothes.id)}
-                                    >
-                                        <Text style = {styles.deleteButtonText}> Delete </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
-                                    style = {styles.closeButton}
-                                    onPress = {() => setSelectedClothes(null)}
-                                    >
-                                        <Text style = {styles.closeButtonText}> Close </Text>
-                                    </TouchableOpacity>
-                                </>
+
+                            <Text style={styles.modalTitle}>
+                                Add Clothing Item
+                            </Text>
+
+                            <Text style={styles.inputLabel}>
+                                Clothing Name
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ex: Blue T-Shirt"
+                                value={name}
+                                onChangeText={setName}
+                            />
+
+                            <Text style={styles.inputLabel}>
+                                Category
+                            </Text>
+
+                            {renderOptions(
+                                CATEGORIES,
+                                category,
+                                setCategory
                             )}
+
+                            <Text style={styles.inputLabel}>
+                                Color
+                            </Text>
+
+                            {renderOptions(
+                                COLORS,
+                                color,
+                                setColor
+                            )}
+
+                            <Text style={styles.inputLabel}>
+                                Design
+                            </Text>
+
+                            {renderOptions(
+                                DESIGNS,
+                                design,
+                                setDesign
+                            )}
+
+
+                            <Text style={styles.inputLabel}>
+                                Material
+                            </Text>
+
+                            {renderOptions(
+                                MATERIALS,
+                                material,
+                                setMaterial
+                            )}
+
+                            <Text style={styles.inputLabel}>
+                                Laundry Status
+                            </Text>
+
+                            {renderOptions(
+                                LAUNDRY_STATUSES,
+                                laundryStatus,
+                                setLaundryStatus
+                            )}
+
+                            <TouchableOpacity
+                                style={styles.saveButton}
+                                onPress={addClothing}
+                            >
+
+                                <Text style={styles.saveButtonText}>
+                                    Save
+                                </Text>
+
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                onPress={() => setIsModalVisible(false)}
+                            >
+
+                                <Text style={styles.cancelButtonText}>
+                                    Cancel
+                                </Text>
+
+                            </TouchableOpacity>
+
                         </ScrollView>
+
                     </View>
+
                 </View>
+
             </Modal>
+
+
+            <Modal
+                visible={selectedClothes !== null}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setSelectedClothes(null)}
+            >
+
+                <View style={styles.modalOverlay}>
+
+                    <View style={styles.modalContent}>
+
+                        <ScrollView
+                            showsVerticalScrollIndicator={true}
+                            keyboardShouldPersistTaps="handled"
+                        >
+
+                            <Text style={styles.modalTitle}>
+                                Clothing Item Details
+                            </Text>
+
+                            {selectedClothes && (
+
+                                <>
+
+                                    <Text style={styles.detailLabel}>
+                                        Name:
+                                    </Text>
+
+                                    <Text style={styles.detailValue}>
+                                        {selectedClothes.name}
+                                    </Text>
+
+                                    <Text style={styles.detailLabel}>
+                                        Category:
+                                    </Text>
+
+                                    <Text style={styles.detailValue}>
+                                        {selectedClothes.category}
+                                    </Text>
+
+                                    <Text style={styles.detailLabel}>
+                                        Color:
+                                    </Text>
+
+                                    <Text style={styles.detailValue}>
+                                        {selectedClothes.color}
+                                    </Text>
+
+                                    <Text style={styles.detailLabel}>
+                                        Design:
+                                    </Text>
+
+                                    <Text style={styles.detailValue}>
+                                        {selectedClothes.design}
+                                    </Text>
+
+                                    <Text style={styles.detailLabel}>
+                                        Material:
+                                    </Text>
+
+                                    <Text style={styles.detailValue}>
+                                        {selectedClothes.material || 'Not Set'}
+                                    </Text>
+
+                                    <Text style={styles.detailLabel}>
+                                        Times Worn:
+                                    </Text>
+
+                                    <Text style={styles.detailValue}>
+                                        {selectedClothes.timesWorn ?? 0}
+                                    </Text>
+
+                                    <Text style={styles.detailLabel}>
+                                        Laundry Status:
+                                    </Text>
+
+                                    <Text style={styles.detailValue}>
+                                        {selectedClothes.laundryStatus || 'Not Set'}
+                                    </Text>
+
+                                    <TouchableOpacity
+                                        style={styles.deleteButton}
+                                        onPress={() =>
+                                            deleteClothing(selectedClothes.id)
+                                        }
+                                    >
+                                        <Text style={styles.deleteButtonText}>
+                                            Delete
+                                        </Text>
+
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.closeButton}
+                                        onPress={() => setSelectedClothes(null)}
+                                    >
+
+                                        <Text style={styles.closeButtonText}>
+                                            Close
+                                        </Text>
+
+                                    </TouchableOpacity>
+
+                                </>
+
+                            )}
+
+                        </ScrollView>
+
+                    </View>
+
+                </View>
+
+            </Modal>
+
         </View>
-        );
-        {/*  
-        return(
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" />
-        {screen === 'closet' }
-        
-          ) */
-       }
-    }
+    );
+}
+
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#F8F7F4",
+        backgroundColor: "#FFFFFF",
         paddingHorizontal: 20,
         paddingTop: 60,
         paddingBottom: 35,
     },
 
-    header:{
+    header: {
         marginBottom: 15,
     },
 
     headerText: {
         fontSize: 28,
         fontWeight: "bold",
-        color: "#252525",
+        color: "#111111",
     },
 
-    subtitle:{
+    subtitle: {
         fontSize: 14,
         color: "#777777",
         marginTop: 5,
@@ -480,7 +766,7 @@ const styles = StyleSheet.create({
     filterTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#252525",
+        color: "#111111",
         marginBottom: 15,
     },
 
@@ -498,23 +784,94 @@ const styles = StyleSheet.create({
         paddingVertical: 9,
         paddingHorizontal: 15,
         borderRadius: 20,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#F5F5F5",
         borderWidth: 1,
-        borderColor: "#E5E5E5",
+        borderColor: "#DADADA",
     },
 
     selectedFilterButton: {
-        backgroundColor: "#536B5B",
-        borderColor: "#536B5B",
+        backgroundColor: "#333333",
+        borderColor: "#333333",
     },
 
     filterText: {
         fontSize: 12,
-        color: "#252525",
+        color: "#222222",
     },
 
     selectedFilterButtonText: {
         color: "#FFFFFF",
+    },
+
+    filtersToggle: {
+        backgroundColor: "#F5F5F5",
+        borderWidth: 1,
+        borderColor: "#DADADA",
+        borderRadius: 12,
+        padding: 15,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+
+    filtersToggleText: {
+        fontSize: 15,
+        color: "#222222",
+        fontWeight: "600",
+    },
+
+    filtersPanel: {
+        backgroundColor: "#FFFFFF",
+        borderWidth: 1,
+        borderColor: "#DADADA",
+        borderRadius: 12,
+        marginBottom: 10,
+        maxHeight: 260,
+        overflow: "hidden",
+    },
+
+    filterSection: {
+        borderBottomWidth: 1,
+        borderBottomColor: "#E5E5E5",
+    },
+
+    filterSectionHeader: {
+        paddingVertical: 14,
+        paddingHorizontal: 15,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+
+    filterSectionTitle: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#222222",
+    },
+
+    filterSectionRight: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+    },
+
+    filterSelection: {
+        fontSize: 12,
+        color: "#777777",
+    },
+
+    arrow: {
+        fontSize: 11,
+        color: "#444444",
+    },
+
+    filterChoices: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        paddingHorizontal: 15,
+        paddingBottom: 15,
     },
 
     resultsRow: {
@@ -531,7 +888,7 @@ const styles = StyleSheet.create({
 
     resetText: {
         fontSize: 13,
-        color: "#536B5B",
+        color: "#333333",
         fontWeight: "600",
     },
 
@@ -549,12 +906,17 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
 
-    clothingCard: {
+    clothingGridItem: {
         width: "48%",
+        marginBottom: 15,
+    },
+
+    clothingCard: {
         backgroundColor: "#FFFFFF",
         borderRadius: 15,
         padding: 10,
-        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: "#E5E5E5",
     },
 
     imagePlaceholder: {
@@ -562,23 +924,30 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 10,
-        backgroundColor: "#EAEAEA",
+        backgroundColor: "#EEEEEE",
+    },
+
+    imagePlaceholderText: {
+        fontSize: 13,
+        color: "#777777",
+        textAlign: "center",
     },
 
     placeHolderText: {
         fontSize: 13,
         color: "#777777",
+        textAlign: "center",
     },
 
     clothingName: {
-        marginTop: 10,
+        marginTop: 5,
         fontSize: 16,
         fontWeight: "600",
-        color: "#252525",
+        color: "#111111",
     },
 
     clothingDetails: {
-        marginTop: 4,
+        marginTop: 2,
         fontSize: 13,
         color: "#777777",
     },
@@ -591,10 +960,11 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 14,
         color: "#777777",
+        textAlign: "center",
     },
 
     addButton: {
-        backgroundColor: "#536B5B",
+        backgroundColor: "#222222",
         padding: 17,
         borderRadius: 12,
         alignItems: "center",
@@ -625,23 +995,24 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         fontSize: 20,
         fontWeight: "bold",
-        color: "#252525",
+        color: "#111111",
     },
 
     inputLabel: {
         marginBottom: 10,
         fontSize: 15,
         fontWeight: "600",
-        color: "#252525",
+        color: "#222222",
     },
 
     input: {
         padding: 14,
         borderWidth: 1,
-        borderColor: "#E5E5E5",
-        borderRadius: 10,
+        borderColor: "#DADADA",
+        borderRadius: 20,
         fontSize: 15,
-        color: "#252525",
+        color: "#111111",
+        backgroundColor: "#FAFAFA",
         marginBottom: 20,
     },
 
@@ -656,19 +1027,19 @@ const styles = StyleSheet.create({
         paddingVertical: 9,
         paddingHorizontal: 12,
         borderWidth: 1,
-        borderColor: "#F8F7F4",
+        borderColor: "#DADADA",
         borderRadius: 18,
-        backgroundColor: "#E5E5E5",
+        backgroundColor: "#F5F5F5",
     },
 
     selectedOptionButton: {
-        borderColor: "#536B5B",
-        backgroundColor: "#536B5B",
+        borderColor: "#333333",
+        backgroundColor: "#333333",
     },
 
     optionButtonText: {
         fontSize: 13,
-        color: "#252525",
+        color: "#222222",
     },
 
     selectedOptionButtonText: {
@@ -680,7 +1051,7 @@ const styles = StyleSheet.create({
         padding: 15,
         alignItems: "center",
         borderRadius: 10,
-        backgroundColor: "#536B5B",
+        backgroundColor: "#222222",
     },
 
     saveButtonText: {
@@ -696,7 +1067,7 @@ const styles = StyleSheet.create({
 
     cancelButtonText: {
         fontSize: 15,
-        color: "#777777",
+        color: "#666666",
     },
 
     detailLabel: {
@@ -708,7 +1079,7 @@ const styles = StyleSheet.create({
     detailValue: {
         marginTop: 4,
         fontSize: 16,
-        color: "#252525",
+        color: "#111111",
         fontWeight: "600",
     },
 
@@ -717,13 +1088,15 @@ const styles = StyleSheet.create({
         padding: 15,
         alignItems: "center",
         borderRadius: 10,
-        backgroundColor: "#FCE8E8",
+        backgroundColor: "#EEEEEE",
+        borderWidth: 1,
+        borderColor: "#CCCCCC",
     },
 
     deleteButtonText: {
         fontSize: 15,
         fontWeight: "600",
-        color: "#842318",
+        color: "#222222",
     },
 
     closeButton: {
@@ -733,6 +1106,6 @@ const styles = StyleSheet.create({
 
     closeButtonText: {
         fontSize: 15,
-        color: "#777777",
+        color: "#666666",
     },
 });

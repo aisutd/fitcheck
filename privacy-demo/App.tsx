@@ -6,6 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PhotoRetentionSettings, PrivacyExtras } from './PrivacyExtras';
 import { countMockRecords, emptyMockData, initialMockData } from './privacyData';
+import { usePrivacyPreference } from './lib/privacyPreferences';
+import { loadClosetVisibility, saveClosetVisibility, visibilityError } from './lib/closetVisibility';
+
 
 const C = { purple: '#9765E0', lavender: '#CE95FB', teal: '#00C2BA', indigo: '#534FA5', deep: '#36009C', background: '#F7F5FC', text: '#29233F', muted: '#837C96' };
 const choices = [
@@ -20,10 +23,10 @@ function Icon({ name, color = C.purple, size = 22 }: { name: IconName; color?: s
   return <Ionicons name={name} color={color} size={size} />;
 }
 
-function Toggle({ enabled, onChange, label = 'Automatically delete photos' }: { enabled: boolean; onChange: () => void; label?: string }) {
+function Toggle({ enabled, onChange, label = 'Automatically delete photos', disabled = false }: { enabled: boolean; onChange: () => void; label?: string; disabled?: boolean }) {
   const progress = useRef(new Animated.Value(enabled ? 1 : 0)).current;
   useEffect(() => { Animated.timing(progress, { toValue: enabled ? 1 : 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(); }, [enabled, progress]);
-  return <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: enabled }} onPress={onChange} hitSlop={12}>
+  return <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: enabled, disabled }} disabled={disabled} onPress={onChange} hitSlop={12}>
     <Animated.View style={[s.toggle, { backgroundColor: progress.interpolate({ inputRange: [0, 1], outputRange: ['#DCD7E9', C.teal] }) }]}>
       <Animated.View style={[s.knob, { transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 22] }) }] }]} />
     </Animated.View>
@@ -32,7 +35,12 @@ function Toggle({ enabled, onChange, label = 'Automatically delete photos' }: { 
 
 export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () => void; privacyPolicyUrl?: string }) {
   const [privacy, setPrivacy] = useState<Privacy>('Private');
-  const [privateMirror, setPrivateMirror] = useState(true);
+  const [visibilityState, setVisibilityState] = useState<'loading' | 'ready' | 'saving' | 'error'>('loading');
+  const [visibilityMessage, setVisibilityMessage] = useState('Loading your saved visibility?');
+  const [visibilityAttempt, setVisibilityAttempt] = useState(0);
+  const visibilitySaving = useRef(false);
+  const mirrorPreference = usePrivacyPreference('private_mirror', true);
+  const privateMirror = mirrorPreference.value;
   const [dropdown, setDropdown] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [policyVisible, setPolicyVisible] = useState(false);
@@ -49,6 +57,51 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
   }, [dropdown, menuProgress]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(null), 5500); return () => clearTimeout(timer); }, [notice]);
   const selected = choices.find(option => option.label === privacy)!;
+
+  useEffect(() => {
+    let active = true;
+    setVisibilityState('loading');
+    setVisibilityMessage('Loading your saved visibility?');
+    const timeout = setTimeout(() => {
+      if (!active) return;
+      active = false;
+      setVisibilityState('error');
+      setVisibilityMessage('Connection timed out. Check your connection and try again.');
+    }, 20000);
+
+    void loadClosetVisibility().then(value => {
+      if (!active) return;
+      setPrivacy(value);
+      setVisibilityState('ready');
+      setVisibilityMessage('Your visibility setting is loaded.');
+    }).catch(error => {
+      if (!active) return;
+      setVisibilityState('error');
+      setVisibilityMessage(visibilityError(error));
+    }).finally(() => clearTimeout(timeout));
+
+    return () => { active = false; clearTimeout(timeout); };
+  }, [visibilityAttempt]);
+
+  async function changeVisibility(value: Privacy) {
+    if (visibilitySaving.current || visibilityState !== 'ready') return;
+    visibilitySaving.current = true;
+    setDropdown(false);
+    setVisibilityState('saving');
+    setVisibilityMessage('Saving your visibility?');
+    try {
+      await saveClosetVisibility(value);
+      // Update only after the database confirms the write.
+      setPrivacy(value);
+      setVisibilityMessage('Visibility saved.');
+    } catch (error) {
+      setVisibilityMessage(`Not saved. ${visibilityError(error)} Your previous setting is unchanged.`);
+    } finally {
+      visibilitySaving.current = false;
+      setVisibilityState('ready');
+    }
+  }
+
   return <SafeAreaView style={s.safe}>
     <StatusBar style="dark" />
     <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -69,33 +122,38 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
       <View style={s.sectionLine}><Text style={s.sectionTitle}>PRIVACY PREFERENCES</Text><Icon name="options-outline" color={C.muted} size={17} /></View>
       <View style={s.card}>
         <View style={s.cardHeader}><View style={s.iconBox}><Icon name="people-outline" /></View><View style={s.cardHeading}><Text style={s.cardTitle}>Closet Visibility</Text><Text style={s.description}>Your closet starts private. Choose who can see it.</Text></View></View>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Closet visibility: ${privacy}`} accessibilityState={{ expanded: dropdown }} onPress={() => setDropdown(!dropdown)} style={({ pressed }) => [s.selector, dropdown && { borderColor: C.purple }, pressed && s.pressed]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Closet visibility: ${privacy}`} accessibilityState={{ expanded: dropdown, disabled: visibilityState !== 'ready' }} disabled={visibilityState !== 'ready'} onPress={() => setDropdown(!dropdown)} style={({ pressed }) => [s.selector, dropdown && { borderColor: C.purple }, pressed && s.pressed]}>
           <View style={s.row}><Icon name={selected.icon} color={C.indigo} size={19} /><Text style={s.selectionText}>{privacy}</Text></View><Icon name={dropdown ? 'chevron-up' : 'chevron-down'} color={C.indigo} size={19} />
         </Pressable>
         {menuMounted && <Animated.View style={{ overflow: 'hidden', maxHeight: menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0, 240] }), opacity: menuProgress }}>
-          <View style={s.menu}>{choices.map(option => <Pressable key={option.label} accessibilityRole="button" accessibilityState={{ selected: option.label === privacy }} onPress={() => { setPrivacy(option.label); setDropdown(false); }} style={({ pressed }) => [s.option, option.label === privacy && s.selectedOption, pressed && s.pressed]}>
+          <View style={s.menu}>{choices.map(option => <Pressable key={option.label} accessibilityRole="button" accessibilityState={{ selected: option.label === privacy }} onPress={() => { void changeVisibility(option.label); }} style={({ pressed }) => [s.option, option.label === privacy && s.selectedOption, pressed && s.pressed]}>
             <Icon name={option.icon} color={option.label === privacy ? C.purple : C.muted} size={20} /><View style={{ flex: 1 }}><Text style={s.optionTitle}>{option.label}</Text><Text style={s.optionDescription}>{option.description}</Text></View>{option.label === privacy && <Icon name="checkmark-circle" color={C.purple} size={21} />}
           </Pressable>)}</View>
         </Animated.View>}
         <View style={s.hint}><Icon name="information-circle-outline" size={15} color={C.muted} /><Text style={s.hintText}>{selected.description}</Text></View>
+        <Text accessibilityLiveRegion="polite" style={[s.description, { marginTop: 12 }]}>{visibilityMessage}</Text>
+        {visibilityState === 'error' && <Pressable accessibilityRole="button" onPress={() => setVisibilityAttempt(value => value + 1)} style={{ paddingVertical: 12 }}><Text style={{ color: C.deep, fontWeight: '600' }}>Retry connection</Text></Pressable>}
+        <Text style={[s.hintText, { marginTop: 8 }]}>This saves your preference. Public and friends sharing will be connected in the main app.</Text>
       </View>
 
       <PhotoRetentionSettings />
 
       <View style={[s.card, s.mirrorCard]}>
+        <Text accessibilityLiveRegion="polite" style={s.description}>{mirrorPreference.message}</Text>
+        {mirrorPreference.state === 'error' && <Pressable accessibilityRole="button" onPress={mirrorPreference.retry} style={{ paddingVertical: 12 }}><Text style={{ color: C.deep }}>Retry Private Mirror</Text></Pressable>}
         <View style={s.cardHeader}>
           <View style={[s.iconBox, { backgroundColor: '#E9F8F6' }]}><Icon name="scan-outline" color={C.teal} /></View>
           <View style={s.cardHeading}><View style={s.mirrorTitleRow}><Text style={s.cardTitle}>Private Mirror</Text><Text style={s.previewBadge}>PREVIEW</Text></View><Text style={s.description}>See the outfit on your shape. Keep your identity on your phone.</Text></View>
         </View>
         <View style={s.toggleRow}>
           <View style={s.row}><View style={[s.statusDot, { backgroundColor: privateMirror ? C.teal : '#ADA5BD' }]} /><Text style={[s.statusText, privateMirror && { color: '#008A84' }]}>{privateMirror ? 'Private Mirror selected' : 'Photo try-on selected'}</Text></View>
-          <Toggle enabled={privateMirror} onChange={() => setPrivateMirror(value => !value)} label="Private Mirror preview" />
+          <Toggle enabled={privateMirror} disabled={mirrorPreference.state !== 'ready'} onChange={() => { void mirrorPreference.save(!privateMirror); }} label="Private Mirror preview" />
         </View>
         <View style={s.mirrorMode}>
           <Icon name={privateMirror ? 'person-outline' : 'camera-outline'} color={privateMirror ? C.teal : C.purple} size={24} />
           <View style={{ flex: 1 }}><Text style={s.optionTitle}>{privateMirror ? 'Faceless avatar' : 'Photo-based try-on'}</Text><Text style={s.optionDescription}>{privateMirror ? 'Designed to keep your original photo on-device.' : 'Designed for a more realistic preview using your photo.'}</Text></View>
         </View>
-        <View style={s.hint}><Icon name="information-circle-outline" size={15} color={C.muted} /><Text style={s.hintText}>Demo preference only. Avatar generation and on-device photo processing are not implemented.</Text></View>
+        <View style={s.hint}><Icon name="information-circle-outline" size={15} color={C.muted} /><Text style={s.hintText}>Your mirror preference is saved. Avatar generation and on-device photo processing are not connected yet.</Text></View>
       </View>
 
       <PrivacyExtras data={data} setData={setData} notify={setNotice} Toggle={Toggle} />

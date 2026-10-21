@@ -1,5 +1,54 @@
 # Fitcheck · Privacy & Data
 
+## Closet Visibility backend
+
+Category deletion now persists sample record arrays after applying
+`supabase/migrations/202610210003_category_records.sql`. Deleting closet items
+also clears saved outfits. Empty arrays stay empty after refresh; failed saves
+leave the previous records and the confirmation open. Counts and closet export
+use the loaded sample records. This does not delete actual uploaded files.
+The separate Delete All My Data control still clears only the current preview.
+
+For the remaining preferences, also run
+`supabase/migrations/202610210002_remaining_preferences.sql` in Supabase's SQL
+Editor. Private Mirror, face/background protection, location removal,
+personalization, retailer-sharing consent, and saved style/size/budget then
+persist in the same owner-protected row. Forget preferences writes empty
+style/size/budget values to the database. Toggle changes update only their own
+fields. Until the migration is applied, the new controls show load errors and
+remain disabled. Verify each setting by waiting for save confirmation and
+refreshing in the same browser. Processing and retailer integrations are still
+unconnected; the persisted switches are preferences only. Category deletion,
+Delete All My Data, and closet export still operate on the demo records.
+
+Photo retention and AI training consent also persist after applying
+`supabase/migrations/202610210001_privacy_preferences.sql` in the Supabase SQL
+Editor. They reuse the same owner-only policies and session. Consent defaults
+off and records its latest change time. Photo retention defaults to after
+processing. Changes update only their own fields. These controls store policy
+preferences; no photo-deletion worker or AI-training pipeline is connected yet.
+To verify, change each preference, wait for confirmation, refresh, and check
+that all three settings persist independently. Withdraw AI consent and verify
+that it also remains off after refreshing.
+
+Closet Visibility now loads and saves `privacy_settings.closet_visibility` in
+Supabase. This supersedes the local-only description below for that setting;
+the other controls still use mock data. Actual closet sharing is not implemented.
+
+Configure `EXPO_PUBLIC_SUPABASE_URL` and
+`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local`. The standalone demo
+requires anonymous sign-ins enabled and the `privacy_settings` table with
+owner-only SELECT, INSERT, and UPDATE policies. A new user starts Private;
+selecting an option creates or updates their row. The card displays loading,
+save confirmation, and persistent errors, with Retry for loading failures.
+
+Run from this directory with `npx expo start --clear`, then press `w`. Change
+visibility, wait for “Visibility saved.”, and refresh in the same browser to
+verify persistence. Clearing browser storage or using another browser creates
+a separate anonymous identity. During integration, reuse the main app's signed-in
+session and remove the anonymous sign-in fallback in `lib/closetVisibility.ts`.
+The demo's Delete All My Data action still clears mock data only.
+
 A single-screen React Native / Expo / TypeScript mockup. All interactions use local React state; no backend or real data deletion is involved.
 
 ## Run

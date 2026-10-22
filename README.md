@@ -1,50 +1,45 @@
-# Muse — Virtual Try-On
+# FitCheck prototype
 
-A React Native / TypeScript Expo frontend with the Lavender Milk Tea palette. No backend or AI service is connected.
+A small Expo app: choose your photo and a garment, tap Generate, and see the image returned by IDM-VTON. The original lavender design, camera/gallery picker and loading dots remain.
 
-## Run
+## Backend
 
-From this folder:
+From `C:\Users\annal\fitcheck\backend`, using Python 3.11+:
 
-```sh
-npm install
-npm start
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-Scan the QR code with an Expo Go version compatible with SDK 57. The computer and phone should share a network. `npm run web` opens the browser preview; camera permission dialogs and camera capture should be verified on a physical iOS or Android device.
+All backend code is in `backend/main.py`: image validation, the `generate_tryon()` provider function, and the `/tryon` endpoint. Images are limited to 8 MB each and 20 megapixels, normalized without cropping, and kept only in a temporary folder. Each result gets a unique filename. The backend sends photos to the public Hugging Face IDM-VTON Space with automatic masking, 30 steps and seed 42. It checks the API schema and reports errors instead of showing a fake result. No model weights run locally.
 
-## Implementation
+If Hugging Face requires a token, set the backend environment variable `HF_TOKEN` before starting. Never place it in the frontend. The public demo can be busy or run out of GPU quota. It targets upper-body clothing, and its code/model license is noncommercial: https://huggingface.co/yisol/IDM-VTON . This is a local prototype, not a production server.
 
-- `src/VirtualTryOn.tsx`: responsive screen, reusable UI components, independent photo state, guarded generation, and timed ellipsis.
-- `src/photos.ts`: uncropped system image picker, just-in-time camera permission, validation and decode check. Cancellation and invalid replacements keep the existing image.
-- `src/tryOn.ts`: abortable 2.6-second demo adapter. Replace it with an API request accepting the original two picker assets. No photos are uploaded by this app.
-- `src/TryOnViewer.tsx`: Expo GL / Three.js studio with 360-degree drag, pinch zoom, Front/Side/Back presets, reset, loading/error recovery, and GPU cleanup. Rendering pauses when the screen or app is inactive.
-- `src/loadDemoAvatar.ts`: reads the bundled GLB and handles native textures without browser DOM APIs. No third-party asset request is made by the viewer.
-- `src/app/`: Expo Router stack. The upload screen stays mounted behind the viewer, preserving both photos on Back or Try Another. A browser refresh or app restart starts a new session.
+## Frontend
 
-The demo uses a fixed CC0 avatar from Innerscene / MakeHuman. See `assets/avatar/LICENSE.md` for provenance. The GLB is about 26 MB; original embedded textures are also extracted for native loading. This is a demo asset, not a likeness, garment fitting result, or verified AAA-quality character. Physical device visual and performance verification is still required. Three.js 0.166.1 is pinned for its WebGL1 fallback support with Expo GL; no `expo-three` or custom native build is required.
+From `C:\Users\annal\fitcheck\frontend`:
 
-Save Look displays “Saving looks is coming soon!” and does not persist anything.
+```powershell
+npm install
+Copy-Item .env.example .env
+```
 
-The other three navigation sections are placeholders. Photos are retained in memory for the current session, not persisted to a database or device storage.
+Set `EXPO_PUBLIC_API_URL` in `.env` to `http://YOUR_COMPUTER_WIFI_IPV4:8000`. Find that address with `ipconfig`. A physical phone must use your computer's LAN address, not localhost. Keep both devices on the same network. Check `http://YOUR_COMPUTER_WIFI_IPV4:8000/health` in the phone browser if it cannot connect.
 
-## Device acceptance check
+```powershell
+npm start -- --clear
+```
 
-1. Confirm generation is disabled with zero photos and with only either photo.
-2. Select each image, switch tabs, and confirm previews and checkmarks persist.
-3. Cancel a replacement; the original preview should remain.
-4. Deny camera access, then try again after enabling it in Settings.
-5. With both images, generate and confirm cycling dots, no repeated taps, and navigation to Your Try-On with a clearly labeled fixed demo avatar.
-6. Remove either image and confirm generation is disabled again.
-7. Check a portrait image, a landscape garment, and a small screen with scrolling.
-8. Drag through 360 degrees; verify Front/Side/Back take a smooth short rotation path. Pinch and use zoom controls at both limits, then reset.
-9. Check full-body framing including shoes, material textures, relaxed pose, and shadows on physical iOS and Android devices. Confirm acceptable frame rate and no clipping.
-10. Save Look must show only the coming-soon message. Back, Android hardware back, and Try Another must retain both uploads.
+Scan the QR code in Expo Go. Restart Expo after editing `.env`. For a browser on the same computer, the API URL can be `http://localhost:8000`. Browser CORS allows localhost ports 8081 and 8085 by default; change backend `CORS_ORIGINS` for another origin.
 
-## Validation
+## Main files
 
-`npx tsc --noEmit` checks TypeScript. `npx expo export --platform all` checks production bundling. Device-specific permission and capture behavior requires Expo Go on a device.
+- `frontend/src/VirtualTryOn.tsx`: upload screen and generation button.
+- `frontend/src/photos.ts`: camera/gallery selection.
+- `frontend/src/tryOnApi.ts`: sends both photos to the backend.
+- `frontend/src/TryOnResultScreen.tsx`: shows the returned image.
+- `frontend/src/TryOnResultContext.tsx`: keeps the result in memory between screens.
+- `frontend/src/app/`: the two Expo Router screens and shared layout.
 
-`npm run lint` checks Expo lint rules. `node --test tests/viewer.test.cjs` checks camera framing, zoom limits, shortest preset paths, GLB geometry parsing, and exact local texture integrity.
-
-Visual verification was blocked because the in-app browser could not reach the local server and Windows Computer Use could not verify its browser URL. These checks do not certify native rendering or gesture behavior; complete the device checklist above.
+Back and Try Another preserve uploads. Photos/results disappear when the app session ends. Other feature tabs remain placeholders. The old 3D demo, Save Look placeholder, test suites, API inspection scripts and unused Docker configuration have been removed. Removed files are recoverable outside the project under `Documents\Codex\2026-10-09\files-pasted-by-the-user-development-2\work\prototype-removed`.

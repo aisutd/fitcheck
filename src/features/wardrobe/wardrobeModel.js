@@ -25,6 +25,8 @@ function isWardrobeItem(item) {
     typeof item.available === 'boolean' &&
     Array.isArray(item.occasions) &&
     item.occasions.every((occasion) => OCCASIONS.includes(occasion)) &&
+    (item.warmth === undefined || ['', 'Light', 'Warm'].includes(item.warmth)) &&
+    (item.coverage === undefined || ['', 'Minimal', 'Moderate', 'More'].includes(item.coverage)) &&
     (item.weatherTags === undefined ||
       (Array.isArray(item.weatherTags) &&
         item.weatherTags.every((tag) => ['cold', 'mild', 'hot', 'rainy'].includes(tag)))),

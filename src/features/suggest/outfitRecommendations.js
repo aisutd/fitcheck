@@ -1,3 +1,5 @@
+const { scorePersonalWeather } = require('../quiz/weatherPreferences');
+
 const OCCASIONS = ['Work', 'Date Night', 'Casual', 'Formal', 'Gym'];
 const makeItem = (id, name, category, color, colorHex, occasions) => ({
   id,
@@ -77,6 +79,7 @@ function scorePreferenceFactors(items, profile, weatherCondition) {
   const challenges = getGroupAnswer(profile, 'q10', 'challenges') || [];
   const primaryGoal = getGroupAnswer(profile, 'q10', 'primaryGoal');
 
+  const personalWeather = scorePersonalWeather(items, profile, weatherCondition);
   const factorDefinitions = [
     {
       id: 'comfort',
@@ -117,7 +120,7 @@ function scorePreferenceFactors(items, profile, weatherCondition) {
       id: 'weather',
       label: 'Weather match',
       priority: 'weather',
-      selected: weatherCondition ? [weatherCondition] : [],
+      selected: weatherCondition && !personalWeather ? [weatherCondition] : [],
       values: items.flatMap((item) => [
         ...(Array.isArray(item.weatherTags) ? item.weatherTags : []),
         ...(weatherCondition === 'rainy' && item.waterproof === true ? ['rainy'] : []),
@@ -150,6 +153,15 @@ function scorePreferenceFactors(items, profile, weatherCondition) {
       maxPoints: weight,
     }];
   });
+
+  if (personalWeather) {
+    const priorityIndex = rankedPriorities.indexOf('weather');
+    const weight = priorityIndex >= 0 ? PRIORITY_WEIGHTS[priorityIndex] : 1;
+    factors.push({
+      id: 'weather', label: 'Personal weather preference', ...personalWeather,
+      weight, weightedPoints: personalWeather.ratio * weight, maxPoints: weight,
+    });
+  }
 
   const versatilityPriorityIndex = rankedPriorities.indexOf('versatility');
   if (
@@ -242,7 +254,7 @@ function scorePreferenceFactors(items, profile, weatherCondition) {
     factors,
     reasonCandidates: orderedFactors
       .filter((factor) => factor.ratio > 0)
-      .map((factor) => `${factor.label} aligns with ${factor.matched} of ${factor.evaluated} available wardrobe details.`),
+      .map((factor) => factor.reason || `${factor.label} aligns with ${factor.matched} of ${factor.evaluated} available wardrobe details.`),
   };
 }
 

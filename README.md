@@ -45,3 +45,22 @@ on a physical iOS device before relying on it.
 
 `docker-compose.yml` is a generic starter configuration and is not required to
 run the Expo application.
+
+## Know You weather preferences
+
+Cold-weather outfit choices and hot-weather coverage answers now influence
+recommendation ranking when garments have explicit Warmth or Coverage details.
+Add these optional details in the wardrobe editor. Unknown details are not guessed
+from names or photos. An explicit cold-weather outfit choice takes precedence over
+cold sensitivity; selecting both light and warm options permits either.
+
+Personal weather matching replaces generic weather-tag matching when relevant
+personal and garment details exist, retaining the ranked priority weights 6 / 3 / 1.
+Otherwise the existing weather-tag behavior is retained. The selected occasion
+and item availability still constrain every result. Explanations identify the quiz
+answer used. This is a deterministic preference rule based on individual answers,
+not a trained model, repeated-observation confidence, or a live forecast.
+
+Run `npm run test:weather` for contrasting Date Night profiles and edge cases.
+Device verification, repeated weather scenarios, avatar integration, and shopping
+integration remain separate milestones.

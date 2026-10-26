@@ -228,6 +228,8 @@ export default function WardrobeScreen({
       seasons: [],
       weatherTags: [],
       weatherNotes: '',
+      warmth: '',
+      coverage: '',
       waterproof: false,
       occasions: [],
       available: true,
@@ -657,6 +659,18 @@ export default function WardrobeScreen({
                   const id = WEATHER_TAGS.find((tag) => tag.label === label)?.id;
                   if (id) toggleFormList('weatherTags', id);
                 }}
+              />
+              <ChoiceRow
+                label="Warmth · optional, only when known"
+                values={['Light', 'Warm']}
+                selected={form.warmth || ''}
+                onSelect={(value) => updateForm('warmth', form.warmth === value ? '' : value)}
+              />
+              <ChoiceRow
+                label="Coverage · optional, only when known"
+                values={['Minimal', 'Moderate', 'More']}
+                selected={form.coverage || ''}
+                onSelect={(value) => updateForm('coverage', form.coverage === value ? '' : value)}
               />
               <Text style={styles.formLabel}>Weather notes · only what you know</Text>
               <TextInput

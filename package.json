@@ -26,7 +26,14 @@
     "test:recommendations": "node scripts/test-recommendations.cjs",
     "test:quiz": "node scripts/test-quiz.cjs",
     "test:wardrobe": "node scripts/test-wardrobe.cjs",
-    "test:avatar": "node scripts/test-avatar.cjs"
+    "test:avatar": "node scripts/test-avatar.cjs",
+    "test:weather": "node scripts/test-weather-preferences.cjs",
+    "lint": "expo lint"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "typescript": "~6.0.3"
+  }
 }

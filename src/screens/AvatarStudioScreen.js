@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber/native';
 import { StatusBar } from 'expo-status-bar';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   PanResponder,
   Pressable,
@@ -11,6 +12,8 @@ import {
   Text,
   View,
 } from 'react-native';
+
+const { resolveRenderQuality, renderSettings } = require('../features/avatar/renderQuality');
 
 const SKIN_TONES = [
   { id: 'deep', label: 'Deep', color: '#70432F' },
@@ -46,23 +49,23 @@ const OUTFIT_COLOR = Object.fromEntries(OUTFIT_COLORS.map(({ id, color }) => [id
 const FRAME_SCALE = { petite: 0.94, average: 1, tall: 1.07 };
 const CAMERA_DISTANCE = { min: 3.7, max: 6, initial: 4.8, step: 0.35 };
 
-function AvatarModel({ customization, yaw }) {
+function AvatarModel({ customization, yaw, segments }) {
   const skin = SKIN_COLOR[customization.skinTone];
   const hair = HAIR_COLOR[customization.hairColor];
 
   return (
     <group rotation={[0, yaw, 0]} scale={[1, FRAME_SCALE[customization.bodyFrame], 1]}>
       <mesh position={[0, -1.42, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[1.65, 40]} />
+        <circleGeometry args={[1.65, segments]} />
         <meshStandardMaterial color="#DCE3DA" roughness={1} />
       </mesh>
 
       <mesh position={[-0.16, -0.47, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.095, 0.78, 18]} />
+        <cylinderGeometry args={[0.12, 0.095, 0.78, segments]} />
         <meshStandardMaterial color="#343B38" roughness={0.85} />
       </mesh>
       <mesh position={[0.16, -0.47, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.095, 0.78, 18]} />
+        <cylinderGeometry args={[0.12, 0.095, 0.78, segments]} />
         <meshStandardMaterial color="#343B38" roughness={0.85} />
       </mesh>
       <mesh position={[-0.16, -0.91, 0.045]} castShadow>
@@ -75,77 +78,77 @@ function AvatarModel({ customization, yaw }) {
       </mesh>
 
       <mesh position={[0, 0.48, 0]} castShadow>
-        <cylinderGeometry args={[0.29, 0.32, 0.77, 24]} />
+        <cylinderGeometry args={[0.29, 0.32, 0.77, segments]} />
         <meshStandardMaterial color={OUTFIT_COLOR[customization.outfitColor]} roughness={0.8} />
       </mesh>
       <mesh position={[0, -0.07, 0]} castShadow>
-        <cylinderGeometry args={[0.3, 0.24, 0.3, 20]} />
+        <cylinderGeometry args={[0.3, 0.24, 0.3, segments]} />
         <meshStandardMaterial color="#343B38" roughness={0.85} />
       </mesh>
       <mesh position={[0, 0.91, 0]} castShadow>
-        <cylinderGeometry args={[0.11, 0.11, 0.18, 16]} />
+        <cylinderGeometry args={[0.11, 0.11, 0.18, segments]} />
         <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
 
       <mesh position={[-0.37, 0.54, 0]} rotation={[0, 0, -0.12]} castShadow>
-        <cylinderGeometry args={[0.11, 0.085, 0.53, 16]} />
+        <cylinderGeometry args={[0.11, 0.085, 0.53, segments]} />
         <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
       <mesh position={[0.37, 0.54, 0]} rotation={[0, 0, 0.12]} castShadow>
-        <cylinderGeometry args={[0.11, 0.085, 0.53, 16]} />
+        <cylinderGeometry args={[0.11, 0.085, 0.53, segments]} />
         <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
       <mesh position={[-0.4, 0.23, 0]} castShadow>
-        <sphereGeometry args={[0.095, 16, 12]} />
+        <sphereGeometry args={[0.095, segments, segments]} />
         <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
       <mesh position={[0.4, 0.23, 0]} castShadow>
-        <sphereGeometry args={[0.095, 16, 12]} />
+        <sphereGeometry args={[0.095, segments, segments]} />
         <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
 
       <mesh position={[0, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.265, 28, 20]} />
+        <sphereGeometry args={[0.265, segments, segments]} />
         <meshStandardMaterial color={skin} roughness={0.88} />
       </mesh>
       <mesh position={[-0.085, 1.235, 0.242]}>
-        <sphereGeometry args={[0.027, 12, 10]} />
+        <sphereGeometry args={[0.027, segments, segments]} />
         <meshStandardMaterial color="#342C28" roughness={0.75} />
       </mesh>
       <mesh position={[0.085, 1.235, 0.242]}>
-        <sphereGeometry args={[0.027, 12, 10]} />
+        <sphereGeometry args={[0.027, segments, segments]} />
         <meshStandardMaterial color="#342C28" roughness={0.75} />
       </mesh>
       <mesh position={[0, 1.17, 0.255]}>
-        <sphereGeometry args={[0.027, 12, 10]} />
+        <sphereGeometry args={[0.027, segments, segments]} />
         <meshStandardMaterial color={skin} roughness={0.88} />
       </mesh>
       <mesh position={[0, 1.105, 0.242]} scale={[1, 0.24, 0.35]}>
-        <sphereGeometry args={[0.055, 14, 8]} />
+        <sphereGeometry args={[0.055, segments, segments]} />
         <meshStandardMaterial color="#75483A" roughness={0.8} />
       </mesh>
       <mesh position={[-0.263, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.052, 12, 10]} />
+        <sphereGeometry args={[0.052, segments, segments]} />
         <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
       <mesh position={[0.263, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.052, 12, 10]} />
+        <sphereGeometry args={[0.052, segments, segments]} />
         <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
       <mesh position={[0, 1.37, 0]} scale={[1.03, 0.56, 1.04]} castShadow>
-        <sphereGeometry args={[0.27, 24, 16]} />
+        <sphereGeometry args={[0.27, segments, segments]} />
         <meshStandardMaterial color={hair} roughness={0.95} />
       </mesh>
       {customization.hairStyle === 'long' ? (
         <mesh position={[0, 1.07, -0.13]} scale={[0.83, 1.45, 0.48]} castShadow>
-          <sphereGeometry args={[0.22, 20, 16]} />
+          <sphereGeometry args={[0.22, segments, segments]} />
           <meshStandardMaterial color={hair} roughness={0.95} />
         </mesh>
       ) : null}
       {customization.hairStyle === 'curly'
         ? [-0.17, 0, 0.17].map((x, index) => (
           <mesh key={x} position={[x, 1.4 + (index === 1 ? 0.04 : 0), 0]} castShadow>
-            <sphereGeometry args={[0.115, 14, 12]} />
+            <sphereGeometry args={[0.115, segments, segments]} />
             <meshStandardMaterial color={hair} roughness={0.95} />
           </mesh>
         ))
@@ -155,12 +158,13 @@ function AvatarModel({ customization, yaw }) {
 }
 
 function CameraDistance({ distance }) {
-  const { camera } = useThree();
+  const { camera, invalidate } = useThree();
   useEffect(() => {
     camera.position.set(0, 0.12, distance);
     camera.lookAt(0, 0.12, 0);
     camera.updateProjectionMatrix();
-  }, [camera, distance]);
+    invalidate();
+  }, [camera, distance, invalidate]);
   return null;
 }
 
@@ -231,6 +235,13 @@ export default function AvatarStudioScreen({
   const [renderError, setRenderError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [qualityMode, setQualityMode] = useState('auto');
+  const [quality, setQuality] = useState('low');
+  const [reduceMotion, setReduceMotion] = useState(true);
+  const [startedAt] = useState(() => Date.now());
+  const renderStarted = useRef(startedAt);
+  const graphicsLimit = useRef(0);
+  const settings = renderSettings(quality);
   const yawRef = useRef(yaw);
   const gestureStartYaw = useRef(0);
 
@@ -246,7 +257,9 @@ export default function AvatarStudioScreen({
     return () => clearTimeout(timeout);
   }, [renderAttempt, rendererReady, renderError]);
 
-  const panResponder = useMemo(() => PanResponder.create({
+  // Refs below are read only by native gesture callbacks, never during render.
+  // eslint-disable-next-line react-hooks/refs
+  const [panResponder] = useState(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 3,
     onPanResponderGrant: () => {
       gestureStartYaw.current = yawRef.current;
@@ -254,7 +267,25 @@ export default function AvatarStudioScreen({
     onPanResponderMove: (_, gesture) => {
       setYaw(gestureStartYaw.current + gesture.dx * 0.012);
     },
-  }), []);
+  }));
+
+  useEffect(() => {
+    let active = true;
+    let eventReceived = false;
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      eventReceived = true;
+      if (active) setReduceMotion(enabled);
+    });
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (active && !eventReceived) setReduceMotion(enabled);
+    }).catch(() => {});
+    return () => { active = false; subscription.remove(); };
+  }, []);
+
+  function changeQuality(mode) {
+    setQualityMode(mode);
+    setQuality(resolveRenderQuality(mode, graphicsLimit.current));
+  }
 
   async function updateCustomization(key, value) {
     const nextCustomization = { ...customization, [key]: value };
@@ -280,6 +311,8 @@ export default function AvatarStudioScreen({
   }
 
   function retryRenderer() {
+    renderStarted.current = Date.now();
+    setQuality('low');
     setRendererReady(false);
     setRenderError('');
     setRenderAttempt((current) => current + 1);
@@ -311,16 +344,16 @@ export default function AvatarStudioScreen({
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Close Avatar Studio"
+              accessibilityLabel="Continue to outfit suggestions"
               onPress={onClose}
               style={styles.closeButton}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.closeButtonText}>See outfits</Text>
             </Pressable>
           </View>
 
           <Text style={styles.subtitle}>
-            A customizable, stylized 3D avatar. Drag to turn; use the camera controls for precise, accessible adjustments.
+            Make this avatar yours, or continue to outfits. Use the buttons below to adjust the view.
           </Text>
           <Text style={styles.rendererLabel}>INTERACTIVE 3D · LOCALLY GENERATED MODEL</Text>
 
@@ -340,13 +373,15 @@ export default function AvatarStudioScreen({
                   }}
                   fallback={rendererFallback}
                 >
-                  <View style={styles.canvas} {...panResponder.panHandlers}>
+                  <View style={styles.canvas} {...(reduceMotion ? {} : panResponder.panHandlers)}>
                     <Canvas
                       camera={{ position: [0, 0.12, CAMERA_DISTANCE.initial], fov: 34 }}
-                      dpr={[1, 1.5]}
+                      dpr={settings.dpr}
                       frameloop="demand"
                       gl={{ antialias: false, powerPreference: 'low-power' }}
                       onCreated={({ gl }) => {
+                        graphicsLimit.current = gl.capabilities.maxTextureSize;
+                        setQuality(resolveRenderQuality(qualityMode, gl.capabilities.maxTextureSize, Date.now() - renderStarted.current));
                         gl.setClearColor('#E8EDE6', 1);
                         setRendererReady(true);
                       }}
@@ -355,7 +390,7 @@ export default function AvatarStudioScreen({
                       <CameraDistance distance={distance} />
                       <ambientLight intensity={1.8} />
                       <directionalLight position={[3, 4, 5]} intensity={2.2} />
-                      <AvatarModel customization={customization} yaw={yaw} />
+                      <AvatarModel customization={customization} yaw={yaw} segments={settings.segments} />
                     </Canvas>
                   </View>
                 </AvatarRenderBoundary>
@@ -368,6 +403,17 @@ export default function AvatarStudioScreen({
               </>
             )}
           </View>
+
+          <Text style={styles.controlLabel}>PREVIEW QUALITY</Text>
+          <View style={styles.choiceList}>
+            {[{ id: 'auto', label: 'Auto' }, { id: 'low', label: 'Low' }, { id: 'standard', label: 'Standard' }].map((item) => (
+              <ChoiceChip key={item.id} item={item} selected={qualityMode === item.id} onPress={() => changeQuality(item.id)} />
+            ))}
+          </View>
+          <Text accessibilityLiveRegion="polite" style={styles.saveStatus}>
+            {quality === 'low' ? 'Lightweight preview' : 'Standard preview'}
+            {reduceMotion ? ' · Reduced motion: use the view buttons.' : ' · Drag or use the view buttons.'}
+          </Text>
 
           <View style={styles.cameraControls}>
             <CameraButton label="Rotate left" hint="Turn the avatar 45 degrees left" onPress={() => rotateBy(-Math.PI / 4)} />
@@ -530,7 +576,7 @@ const styles = StyleSheet.create({
   retryButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   cameraControls: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 9 },
   cameraButton: {
-    minHeight: 42,
+    minHeight: 44,
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -558,7 +604,7 @@ const styles = StyleSheet.create({
   controlLabel: { marginTop: 5, color: '#6C7771', fontSize: 9, fontWeight: '800', letterSpacing: 0.9 },
   choiceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   choiceChip: {
-    minHeight: 42,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,

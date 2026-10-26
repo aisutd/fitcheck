@@ -28,7 +28,8 @@
     "test:wardrobe": "node scripts/test-wardrobe.cjs",
     "test:avatar": "node scripts/test-avatar.cjs",
     "test:weather": "node scripts/test-weather-preferences.cjs",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test:render-quality": "node scripts/test-render-quality.cjs"
   },
   "private": true,
   "devDependencies": {

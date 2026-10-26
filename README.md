@@ -64,3 +64,21 @@ not a trained model, repeated-observation confidence, or a live forecast.
 Run `npm run test:weather` for contrasting Date Night profiles and edge cases.
 Device verification, repeated weather scenarios, avatar integration, and shopping
 integration remain separate milestones.
+
+## Avatar onboarding and preview quality
+
+The first confirmed quiz profile opens Avatar Studio when avatar storage is ready.
+Use See outfits to continue immediately; edits to an existing quiz profile return
+to suggestions. Avatar appearance remains user-selected and locally saved.
+
+Auto preview quality starts low, then uses reported graphics capability and startup
+time: texture limits below 4096 or startup above 2.5 seconds retain low detail.
+Low uses pixel ratio 1 and 10 geometry segments; Standard uses pixel ratio 1.5
+and 24 segments. Manual selection overrides Auto for the current studio session.
+This is startup adaptation, not continuous FPS or battery monitoring. The renderer
+remains on-demand and retains its timeout, retry, and error fallback.
+
+System reduced motion disables drag rotation; explicit view buttons remain usable.
+There is no automatic avatar rotation. Quality selection is session-only; appearance
+settings retain their existing storage format. Run `npm run test:render-quality`.
+Physical-device motion, graphics, persistence and screen-reader checks remain pending.

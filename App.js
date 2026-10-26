@@ -62,7 +62,6 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
     Promise.allSettled([loadQuizState(), loadWardrobeState(), loadAvatarCustomization()])
       .then(([quizResult, wardrobeResult, avatarResult]) => {
         if (!active) return;
@@ -147,7 +146,7 @@ export default function App() {
       setProfile(nextProfile);
       setDraft(null);
       setStorageError('');
-      setScreen('suggest');
+      setScreen(!profile && avatarReady ? 'avatar' : 'suggest');
     } catch (error) {
       setStorageError(`Your style profile could not be saved: ${error.message}`);
       throw error;
@@ -250,7 +249,10 @@ export default function App() {
       onOpenAvatarStudio={() => {
         if (avatarReady) setScreen('avatar');
       }}
-      onRetryStorage={() => setLoadAttempt((attempt) => attempt + 1)}
+      onRetryStorage={() => {
+        setLoading(true);
+        setLoadAttempt((attempt) => attempt + 1);
+      }}
     />
   );
 }

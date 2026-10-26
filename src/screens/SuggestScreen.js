@@ -251,7 +251,7 @@ export default function SuggestScreen({
           </Pressable>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionLabel}>WHAT'S THE OCCASION?</Text>
+            <Text style={styles.sectionLabel}>WHAT&apos;S THE OCCASION?</Text>
             <Text style={styles.sectionCount}>{OCCASION_INDEX[occasion]} / 05</Text>
           </View>
 

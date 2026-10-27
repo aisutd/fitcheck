@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
 import {
@@ -446,6 +447,18 @@ export default function SuggestScreen({
                       </View>
                     ))}
                 </View>
+
+                <Pressable accessibilityRole="button" accessibilityHint="Opens shopping suggestions separate from your wardrobe"
+                  onPress={() => {
+                    const missing = ['top', 'bottom', 'shoes'].filter((id) => !recommendation.items.some((item) => item.category === id));
+                    router.push({ pathname: '/shopping', params: {
+                      occasion, category: missing[0] || 'layer', missing: missing.join(','),
+                      style: profile?.answers?.q1?.styles?.[0] || '',
+                    } });
+                  }} style={styles.addMissingButton}>
+                  <Text style={styles.addMissingText}>{recommendation.complete ? 'Explore alternatives' : 'Complete this outfit'}</Text>
+                  <Text style={styles.addMissingArrow}>↗</Text>
+                </Pressable>
 
                 <View style={styles.reasonsCard}>
                   {recommendation.reasons.map((reason) => (

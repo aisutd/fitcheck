@@ -82,3 +82,19 @@ System reduced motion disables drag rotation; explicit view buttons remain usabl
 There is no automatic avatar rotation. Quality selection is session-only; appearance
 settings retain their existing storage format. Run `npm run test:render-quality`.
 Physical-device motion, graphics, persistence and screen-reader checks remain pending.
+
+## Shopping edit
+
+Each outfit opens a dedicated Expo Router shopping route. Missing essentials are
+selected first; complete looks offer optional alternatives. The editorial product
+grid uses large images and restrained USD prices, with an optional maximum per
+item. Product taps open external shopping links; products are never inserted into
+the owned wardrobe. Searches run only after Find pieces is tapped.
+
+See `server/README.md` for private SerpApi setup, the public backend URL, local
+phone networking, hosting and limits. With no backend/key the app displays a clear
+unavailable state. There are no fabricated listings or silent demo fallbacks.
+Run `npm run test:shopping` for backend and normalization checks.
+
+Expo Router now owns the app entry and shopping route; existing home quiz,
+wardrobe and avatar views retain their current state and local persistence.

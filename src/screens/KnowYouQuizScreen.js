@@ -1,3 +1,4 @@
+import QuizAvatarPreview from '../features/avatar/QuizAvatarPreview';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
@@ -11,7 +12,6 @@ import {
 import {
   QUIZ_QUESTIONS,
   QUIZ_SCHEMA_VERSION,
-  hasAnyAnswer,
   isOptionSelected,
   movePriority,
   toggleMultipleChoice,
@@ -130,6 +130,7 @@ function QuizOption({ item, selected, selection, onPress, rank }) {
 }
 
 export default function KnowYouQuizScreen({
+  avatarCustomization,
   initialDraft,
   originalProfile,
   storageError,
@@ -337,6 +338,10 @@ export default function KnowYouQuizScreen({
                 <Text accessibilityRole="header" style={styles.title}>{question.title}</Text>
                 <Text style={styles.subtitle}>{question.description}</Text>
               </View>
+
+              {['q5', 'q6', 'q7'].includes(question.id) ? (
+                <QuizAvatarPreview answers={answers} questionId={question.id} customization={avatarCustomization} />
+              ) : null}
 
               {question.groups.map((group) => {
                 const groupAnswer = answers[question.id][group.id];

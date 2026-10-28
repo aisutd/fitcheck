@@ -34,4 +34,8 @@ assert.ok(!isWardrobeItem({ ...wardrobe[0], warmth: 'guess' }));
 const unavailable = wardrobe.map((item) => ({ ...item, available: item.id !== 'shorts' }));
 assert.ok(generateRecommendations('Date Night', unavailable, profile('shorts-light-top'), options).recommendations.every((outfit) => outfit.items.every((item) => item.id !== 'shorts')));
 assert.equal(generateRecommendations('Work', wardrobe, profile('warm-layers'), options).recommendations.length, 0);
+const lightPants = { ...wardrobe.find((item) => item.id === 'trousers'), id: 'aaa-light-pants', warmth: 'Light', coverage: 'More' };
+const shortsChoice = generateRecommendations('Date Night', [...wardrobe, lightPants], profile('shorts-light-top'), options).recommendations[0];
+assert.ok(shortsChoice.items.some((item) => item.id === 'shorts'), 'cold shorts answer distinguishes shorts from equally lightweight covered pants');
+assert.ok(shortsChoice.items.some((item) => item.id === 'light-top'), 'bottom coverage preference must not require a minimal-coverage top');
 console.log('Passed personal weather preference checks: contrasting Date Night profiles, evidence, weighting, unknown metadata, mixed choices, hot coverage, validation, availability and occasion constraints.');

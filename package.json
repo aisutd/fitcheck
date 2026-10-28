@@ -38,7 +38,10 @@
     "lint": "expo lint",
     "test:render-quality": "node scripts/test-render-quality.cjs",
     "shopping:server": "node --env-file-if-exists=server/.env.local server/shopping.cjs",
-    "test:shopping": "node scripts/test-shopping.cjs"
+    "test:shopping": "node scripts/test-shopping.cjs",
+    "test": "node scripts/test-all.cjs",
+    "test:checkpoint": "node scripts/test-checkpoint.cjs",
+    "evaluate:checkpoint": "node scripts/evaluate-checkpoint.cjs"
   },
   "private": true,
   "devDependencies": {

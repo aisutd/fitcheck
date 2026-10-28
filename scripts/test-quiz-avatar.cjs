@@ -1,0 +1,12 @@
+const assert = require('node:assert/strict');
+const { quizAvatarPreview } = require('../src/features/quiz/quizAvatarPreview');
+const answers = { q5: { coldOutfits: ['warm-layers', 'shorts-light-top'] }, q6: { hotOutfits: ['more-coverage'] }, q7: { rainOutfits: ['waterproof-layers'] } };
+const original = JSON.stringify(answers);
+assert.equal(quizAvatarPreview(answers, 'q5').bottoms, 'short');
+assert.equal(quizAvatarPreview(answers, 'q5').sleeves, 'short');
+assert.equal(quizAvatarPreview(answers, 'q6').bottoms, 'long');
+assert.equal(quizAvatarPreview(answers, 'q7').layer, true);
+assert.equal(quizAvatarPreview({}, 'q5').label, 'Choose an outfit idea to preview');
+assert.equal(quizAvatarPreview({ q5: { coldOutfits: ['invalid'] } }, 'q5').layer, false);
+assert.equal(JSON.stringify(answers), original, 'visual preview must not rewrite quiz selections');
+console.log('Passed live quiz avatar mapping, missing-choice fallback and answer preservation checks.');

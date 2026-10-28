@@ -1,3 +1,4 @@
+import { persistConfirmedProfile } from './src/features/quiz/commitProfile';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import {
@@ -141,11 +142,12 @@ export default function App() {
 
   async function commitProfile(nextProfile) {
     try {
-      await saveStyleProfile(nextProfile);
-      await removeQuizDraft();
+      const result = await persistConfirmedProfile(nextProfile, {
+        saveProfile: saveStyleProfile, clearDraft: removeQuizDraft,
+      });
       setProfile(nextProfile);
-      setDraft(null);
-      setStorageError('');
+      if (result.draftCleared) setDraft(null);
+      setStorageError(result.warning);
       setScreen(!profile && avatarReady ? 'avatar' : 'suggest');
     } catch (error) {
       setStorageError(`Your style profile could not be saved: ${error.message}`);
@@ -221,6 +223,7 @@ export default function App() {
     };
     return (
       <KnowYouQuizScreen
+        avatarCustomization={avatarCustomization}
         initialDraft={initialDraft}
         originalProfile={profile}
         storageError={storageError}

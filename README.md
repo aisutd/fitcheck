@@ -98,3 +98,12 @@ Run `npm run test:shopping` for backend and normalization checks.
 
 Expo Router now owns the app entry and shopping route; existing home quiz,
 wardrobe and avatar views retain their current state and local persistence.
+
+## October 28 checkpoint
+
+See `docs/CHECKPOINT.md` for implemented features, remaining requirements,
+mentor hosting handoff, demo instructions and verification limits. Run `npm test`
+for all logic suites and `npm run evaluate:checkpoint` for controlled sample cases.
+The weather quiz now previews illustrative sleeve lengths, bottoms and a layer
+without changing the user's saved avatar appearance or quiz selections. It does
+not yet implement the circular carousel or real product garments in the quiz.

@@ -1,3 +1,4 @@
+import AvatarModel from '../features/avatar/AvatarFigure';
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber/native';
 import { StatusBar } from 'expo-status-bar';
@@ -43,119 +44,8 @@ const OUTFIT_COLORS = [
   { id: 'plum', label: 'Plum', color: '#79556F' },
 ];
 
-const SKIN_COLOR = Object.fromEntries(SKIN_TONES.map(({ id, color }) => [id, color]));
-const HAIR_COLOR = Object.fromEntries(HAIR_COLORS.map(({ id, color }) => [id, color]));
-const OUTFIT_COLOR = Object.fromEntries(OUTFIT_COLORS.map(({ id, color }) => [id, color]));
-const FRAME_SCALE = { petite: 0.94, average: 1, tall: 1.07 };
 const CAMERA_DISTANCE = { min: 3.7, max: 6, initial: 4.8, step: 0.35 };
 
-function AvatarModel({ customization, yaw, segments }) {
-  const skin = SKIN_COLOR[customization.skinTone];
-  const hair = HAIR_COLOR[customization.hairColor];
-
-  return (
-    <group rotation={[0, yaw, 0]} scale={[1, FRAME_SCALE[customization.bodyFrame], 1]}>
-      <mesh position={[0, -1.42, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[1.65, segments]} />
-        <meshStandardMaterial color="#DCE3DA" roughness={1} />
-      </mesh>
-
-      <mesh position={[-0.16, -0.47, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.095, 0.78, segments]} />
-        <meshStandardMaterial color="#343B38" roughness={0.85} />
-      </mesh>
-      <mesh position={[0.16, -0.47, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.095, 0.78, segments]} />
-        <meshStandardMaterial color="#343B38" roughness={0.85} />
-      </mesh>
-      <mesh position={[-0.16, -0.91, 0.045]} castShadow>
-        <boxGeometry args={[0.2, 0.16, 0.38]} />
-        <meshStandardMaterial color="#EEECE5" roughness={0.8} />
-      </mesh>
-      <mesh position={[0.16, -0.91, 0.045]} castShadow>
-        <boxGeometry args={[0.2, 0.16, 0.38]} />
-        <meshStandardMaterial color="#EEECE5" roughness={0.8} />
-      </mesh>
-
-      <mesh position={[0, 0.48, 0]} castShadow>
-        <cylinderGeometry args={[0.29, 0.32, 0.77, segments]} />
-        <meshStandardMaterial color={OUTFIT_COLOR[customization.outfitColor]} roughness={0.8} />
-      </mesh>
-      <mesh position={[0, -0.07, 0]} castShadow>
-        <cylinderGeometry args={[0.3, 0.24, 0.3, segments]} />
-        <meshStandardMaterial color="#343B38" roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 0.91, 0]} castShadow>
-        <cylinderGeometry args={[0.11, 0.11, 0.18, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-
-      <mesh position={[-0.37, 0.54, 0]} rotation={[0, 0, -0.12]} castShadow>
-        <cylinderGeometry args={[0.11, 0.085, 0.53, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.37, 0.54, 0]} rotation={[0, 0, 0.12]} castShadow>
-        <cylinderGeometry args={[0.11, 0.085, 0.53, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[-0.4, 0.23, 0]} castShadow>
-        <sphereGeometry args={[0.095, segments, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.4, 0.23, 0]} castShadow>
-        <sphereGeometry args={[0.095, segments, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.265, segments, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.88} />
-      </mesh>
-      <mesh position={[-0.085, 1.235, 0.242]}>
-        <sphereGeometry args={[0.027, segments, segments]} />
-        <meshStandardMaterial color="#342C28" roughness={0.75} />
-      </mesh>
-      <mesh position={[0.085, 1.235, 0.242]}>
-        <sphereGeometry args={[0.027, segments, segments]} />
-        <meshStandardMaterial color="#342C28" roughness={0.75} />
-      </mesh>
-      <mesh position={[0, 1.17, 0.255]}>
-        <sphereGeometry args={[0.027, segments, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.88} />
-      </mesh>
-      <mesh position={[0, 1.105, 0.242]} scale={[1, 0.24, 0.35]}>
-        <sphereGeometry args={[0.055, segments, segments]} />
-        <meshStandardMaterial color="#75483A" roughness={0.8} />
-      </mesh>
-      <mesh position={[-0.263, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.052, segments, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.263, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.052, segments, segments]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 1.37, 0]} scale={[1.03, 0.56, 1.04]} castShadow>
-        <sphereGeometry args={[0.27, segments, segments]} />
-        <meshStandardMaterial color={hair} roughness={0.95} />
-      </mesh>
-      {customization.hairStyle === 'long' ? (
-        <mesh position={[0, 1.07, -0.13]} scale={[0.83, 1.45, 0.48]} castShadow>
-          <sphereGeometry args={[0.22, segments, segments]} />
-          <meshStandardMaterial color={hair} roughness={0.95} />
-        </mesh>
-      ) : null}
-      {customization.hairStyle === 'curly'
-        ? [-0.17, 0, 0.17].map((x, index) => (
-          <mesh key={x} position={[x, 1.4 + (index === 1 ? 0.04 : 0), 0]} castShadow>
-            <sphereGeometry args={[0.115, segments, segments]} />
-            <meshStandardMaterial color={hair} roughness={0.95} />
-          </mesh>
-        ))
-        : null}
-    </group>
-  );
-}
 
 function CameraDistance({ distance }) {
   const { camera, invalidate } = useThree();

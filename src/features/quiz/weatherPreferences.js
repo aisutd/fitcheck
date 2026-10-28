@@ -1,6 +1,6 @@
 /**
  * @typedef {{answers?: {q5?: {coldOutfits?: string[], coldSensitivity?: string}, q6?: {hotOutfits?: string[], coverage?: string}, q7?: {rainProtection?: string}}}} WeatherProfile
- * @typedef {{field: 'warmth' | 'coverage' | 'waterproof', value: string | boolean, source: string}} WeatherPreference
+ * @typedef {{field: 'warmth' | 'coverage' | 'waterproof', value: string | boolean, source: string, categories?: string[]}} WeatherPreference
  */
 /** @param {WeatherProfile | null} profile @param {string} condition */
 // These are stated preferences from individual quiz scenarios, not learned frequencies.
@@ -17,6 +17,9 @@ function getWeatherPreferences(profile, condition) {
     }
     if (choices.includes('warm-layers') || choices.includes('coat-and-boots')) {
       add('warmth', 'Warm', 'your warm-clothing choice in the cold-weather question');
+    }
+    if (choices.includes('shorts-light-top') && !choices.some((choice) => ['warm-layers', 'coat-and-boots'].includes(choice))) {
+      preferences.push({ field: 'coverage', value: 'Minimal', categories: ['bottom'], source: 'your shorts choice in the cold-weather question' });
     }
     // Use sensitivity only when the user has not chosen an explicit outfit preference.
     if (!preferences.length && answers.q5?.coldSensitivity === 'very-cold') {
@@ -50,12 +53,13 @@ function scorePersonalWeather(items, profile, condition) {
   const evidence = dimensions.flatMap((field) => {
     const choices = preferences.filter((preference) => preference.field === field);
     const known = items.filter((item) => {
+      if (!choices.some((choice) => !choice.categories || choice.categories.includes(item.category))) return false;
       if (field === 'waterproof') return item.category === 'layer' && item.waterproof === true;
       return ['top', 'bottom', 'layer'].includes(item.category) &&
         (field === 'warmth' ? ['Light', 'Warm'] : ['Minimal', 'Moderate', 'More']).includes(item[field] || '');
     });
     if (!known.length) return [];
-    const matched = known.filter((item) => choices.some(({ value }) => value === item[field])).length;
+    const matched = known.filter((item) => choices.some(({ value, categories }) => value === item[field] && (!categories || categories.includes(item.category)))).length;
     return [{ field, matched, evaluated: known.length, sources: choices.map(({ source }) => source) }];
   });
   if (!evidence.length) return null;

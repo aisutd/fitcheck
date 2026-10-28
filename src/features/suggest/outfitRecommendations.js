@@ -24,6 +24,7 @@ const WARDROBE = [
   makeItem('bottom-wide-leg-trouser', 'Wide-Leg Trousers', 'bottom', 'Stone', '#A9A79D', ['Work', 'Formal', 'Date Night']),
   makeItem('bottom-dark-denim', 'Straight Dark Denim', 'bottom', 'Indigo', '#34475D', ['Casual', 'Date Night']),
   makeItem('bottom-midi-skirt', 'Pleated Midi Skirt', 'bottom', 'Forest', '#40594A', ['Work', 'Formal', 'Date Night']),
+  makeItem('bottom-tailored-shorts', 'Tailored Linen Shorts', 'bottom', 'Stone', '#B8AD98', ['Date Night', 'Casual']),
   makeItem('bottom-training-shorts', 'Training Shorts', 'bottom', 'Black', '#262C2A', ['Gym']),
   makeItem('bottom-performance-leggings', 'Performance Leggings', 'bottom', 'Deep plum', '#51424E', ['Gym']),
   makeItem('bottom-cotton-chinos', 'Cotton Chinos', 'bottom', 'Olive', '#777C50', ['Casual', 'Work']),
@@ -36,7 +37,21 @@ const WARDROBE = [
   makeItem('layer-leather-jacket', 'Leather Moto Jacket', 'layer', 'Black', '#292D2B', ['Date Night', 'Casual']),
   makeItem('layer-trench-coat', 'Lightweight Trench', 'layer', 'Stone', '#A39D8E', ['Work', 'Date Night', 'Formal']),
   makeItem('layer-track-jacket', 'Track Jacket', 'layer', 'Cobalt', '#426FC4', ['Gym', 'Casual']),
-];
+].map((item) => ({
+  ...item,
+  // Authored sample attributes, not model predictions or claims about real garments.
+  ...({
+    'top-black-knit': { warmth: 'Light', coverage: 'Moderate', fit: 'Regular', styleTags: ['classic', 'smart-casual'], colorFamily: 'Darks', weatherTags: ['mild', 'hot'] },
+    'top-linen-shirt': { warmth: 'Light', coverage: 'Moderate', fit: 'Relaxed', styleTags: ['minimalist', 'smart-casual'], colorFamily: 'Earth Tones', weatherTags: ['hot', 'mild'] },
+    'top-ribbed-turtleneck': { warmth: 'Warm', coverage: 'More', fit: 'Slim/Fitted', styleTags: ['classic', 'minimalist'], colorFamily: 'Neutrals', weatherTags: ['cold'] },
+    'bottom-tailored-shorts': { warmth: 'Light', coverage: 'Minimal', fit: 'Relaxed', styleTags: ['minimalist', 'smart-casual'], colorFamily: 'Earth Tones', weatherTags: ['hot', 'mild'] },
+    'bottom-charcoal-trousers': { warmth: 'Warm', coverage: 'More', fit: 'Regular', styleTags: ['classic', 'smart-casual'], colorFamily: 'Darks', weatherTags: ['cold', 'mild'] },
+    'bottom-wide-leg-trouser': { warmth: 'Warm', coverage: 'More', fit: 'Relaxed', styleTags: ['minimalist'], colorFamily: 'Neutrals', weatherTags: ['cold', 'mild'] },
+    'shoes-ankle-boots': { styleTags: ['classic'], colorFamily: 'Darks', weatherTags: ['cold', 'rainy'] },
+    'layer-trench-coat': { warmth: 'Light', coverage: 'More', waterproof: true, styleTags: ['classic'], colorFamily: 'Neutrals', weatherTags: ['rainy', 'mild'] },
+    'layer-leather-jacket': { warmth: 'Warm', coverage: 'More', styleTags: ['streetwear'], colorFamily: 'Darks', weatherTags: ['cold'] },
+  }[item.id] || {}),
+}));
 
 function getSignature(items) {
   return items.map((item) => item.id).sort().join('|');
@@ -128,6 +143,7 @@ function scorePreferenceFactors(items, profile, weatherCondition) {
     },
   ];
 
+  /** @type {{id: string, label: string, ratio: number, matched: number, evaluated: number, weight: number, weightedPoints: number, maxPoints: number, reason?: string}[]} */
   const factors = factorDefinitions.flatMap((definition) => {
     if (!definition.selected.length) return [];
     const actualValues = definition.values.filter((value) => typeof value === 'string' && value.trim());
@@ -386,13 +402,19 @@ function buildCandidates(occasion, wardrobe, profile, weatherCondition, variety,
   };
 }
 
+/**
+ * @param {string} occasion
+ * @param {Array<object>} wardrobe
+ * @param {{answers?: any} | null} profile
+ * @param {{variety?: string, previousSignatures?: string[], weatherCondition?: string, fullWardrobe?: object[], recentlyDeleted?: object[]}} options
+ */
 function generateRecommendations(
   occasion,
   wardrobe,
   profile = null,
   options = {},
 ) {
-  const variety = ['familiar', 'balanced', 'creative'].includes(options.variety)
+  const variety = ['familiar', 'balanced', 'creative'].includes(options.variety || '')
     ? options.variety
     : 'balanced';
   const previousSignatures = Array.isArray(options.previousSignatures)
@@ -421,6 +443,11 @@ function generateRecommendations(
     }
     if (left.score != null && right.score == null) return -1;
     if (left.score == null && right.score != null) return 1;
+    // At equal scores, prefer results supported by more entered details.
+    // This does not turn unknown attributes into mismatches or change the score.
+    const leftEvidence = left.factors.reduce((total, factor) => total + factor.evaluated, 0);
+    const rightEvidence = right.factors.reduce((total, factor) => total + factor.evaluated, 0);
+    if (leftEvidence !== rightEvidence) return rightEvidence - leftEvidence;
     if (left.varietyScore !== right.varietyScore) return right.varietyScore - left.varietyScore;
     return left.signature.localeCompare(right.signature);
   });

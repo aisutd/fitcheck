@@ -1,0 +1,112 @@
+import { Platform, StyleSheet } from 'react-native';
+
+// Scoped to Add Item: the detail form and other dialogs use styles.js.
+export default StyleSheet.create({
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 32,
+        backgroundColor: 'transparent',
+    },
+    modalContent: {
+        width: '100%',
+        maxWidth: 360,
+        maxHeight: '100%',
+        borderRadius: 24,
+        backgroundColor: '#FFFFFF',
+        overflow: 'hidden',
+    },
+    scrollView: {
+        flexShrink: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: 24,
+        paddingTop: 26,
+        paddingBottom: 16,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#252525',
+        marginBottom: 22,
+    },
+    imagePlaceholder: {
+        width: 120,
+        height: 120,
+        alignSelf: 'center',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 12,
+        backgroundColor: '#EAEAEA',
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    placeHolderText: {
+        fontSize: 13,
+        color: '#777777',
+    },
+    inputLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#252525',
+        marginBottom: 10,
+    },
+    input: {
+        minHeight: 50,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        borderWidth: 1,
+        borderColor: '#E5E5E5',
+        borderRadius: 18,
+        fontSize: 15,
+        color: '#252525',
+        marginBottom: 24,
+    },
+    dropdownWrapper: {
+        borderWidth: 1,
+        borderColor: '#B8B8B8',
+        borderRadius: Platform.OS === 'web' ? 0 : 8,
+        backgroundColor: '#FFFFFF',
+        marginBottom: 18,
+        overflow: 'hidden',
+    },
+    dropdownPicker: {
+        width: '100%',
+        color: '#252525',
+        backgroundColor: '#FFFFFF',
+        ...(Platform.OS === 'web' ? {
+            height: 22,
+            borderWidth: 0,
+            borderRadius: 0,
+            fontSize: 14,
+        } : {}),
+    },
+    categoryTrigger: {
+        minHeight: 44,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    categoryText: {
+        fontSize: 14,
+        color: '#252525',
+    },
+    categoryOptions: {
+        maxHeight: 220,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E5E5',
+    },
+    saveButton: {
+        marginTop: 4,
+        minHeight: 48,
+        padding: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 10,
+        backgroundColor: '#536B5B',
+    },
+});

@@ -1,0 +1,12 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.expo/
+.DS_Store
+.env
+.env.*
+!.env.example
+FitCheck_Web/photo-service/storage/
+FitCheck_Web/photo-service/models/
+FitCheck_Web/photo-service/training-app/models/

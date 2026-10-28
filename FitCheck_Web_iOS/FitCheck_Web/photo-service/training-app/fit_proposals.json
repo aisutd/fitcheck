@@ -1,0 +1,51 @@
+{
+  "source_sha256": "ec6aa5ae004480d0f73f8de00959208faadf194a7cad79c822570faa6e875c43",
+  "changes": [
+    {
+      "line": 18,
+      "filename": "woman-blue-long-jean-cn63843522.jpg",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Wide-Leg",
+      "evidence": "Broad leg panels remain wide through the lower leg and hem; this labels visible cut, not wearer sizing."
+    },
+    {
+      "line": 27,
+      "filename": "purple-dress.jpg",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Fit-and-Flare",
+      "evidence": "Shaped bodice narrows at the waist and expands into a visibly flared skirt."
+    },
+    {
+      "line": 28,
+      "filename": "red-dress.jpg",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Fit-and-Flare",
+      "evidence": "Defined waist and shaped bodice above a strongly flared, pleated skirt."
+    },
+    {
+      "line": 31,
+      "filename": "jean-blue.png",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Wide-Leg",
+      "evidence": "Legs are visibly broad from thigh through the hem; a wide-leg silhouette rather than body-fit inference."
+    },
+    {
+      "line": 39,
+      "filename": "jogger-black.avif",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Jogger",
+      "evidence": "Drawstring/elastic waist, narrowing legs and clearly gathered ankle cuffs identify the jogger silhouette."
+    }
+  ],
+  "projected_counts": {
+    "Wide-Leg": 2,
+    "Fit-and-Flare": 2,
+    "Jogger": 1
+  },
+  "training_eligible": false
+}

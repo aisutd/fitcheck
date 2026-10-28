@@ -15,6 +15,9 @@ assert.throws(() => validateSearch({ occasion: 'Date Night', category: 'top', ma
 assert.throws(() => validateSearch({ occasion: 'Date Night', category: 'top', maxPrice: '0.001' }));
 assert.throws(() => validateSearch({ occasion: 'invalid', category: 'top' }));
 assert.throws(() => validateSearch({ occasion: 'Work', category: 'toString' }));
+assert.ok(buildShoppingQuery({ occasion: 'Casual', category: 'bottom', quizChoice: 'shorts-light-top' }).includes('tailored shorts'));
+assert.throws(() => validateSearch({ occasion: 'Casual', category: 'top', quizChoice: 'shorts-light-top' }));
+assert.throws(() => validateSearch({ occasion: 'Casual', category: 'top', quizChoice: '__proto__' }));
 assert.ok(buildShoppingQuery({ occasion: 'Date Night', category: 'top', style: 'minimalist' }).includes('minimalist Date Night'));
 async function withServer(options, run) {
   const server = createShoppingServer(options);

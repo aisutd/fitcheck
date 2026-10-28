@@ -1,3 +1,4 @@
+const { QUIZ_SHOPPING } = require('../quiz/carouselModel');
 const SHOP_CATEGORIES = { top: 'Top', bottom: 'Bottom', shoes: 'Shoes', layer: 'Layer', accessory: 'Accessory' };
 const OCCASIONS = ['Work', 'Date Night', 'Casual', 'Formal', 'Gym'];
 function validateSearch(input) {
@@ -9,12 +10,16 @@ function validateSearch(input) {
     throw new Error('Enter a maximum price between $0.01 and $10,000.');
   }
   const style = typeof input.style === 'string' ? input.style.replace(/[^a-zA-Z -]/g, '').trim().slice(0, 40) : '';
-  return { occasion: input.occasion, category: input.category, style, maxPrice };
+  const quizChoice = input.quizChoice || '';
+  if (quizChoice && (!Object.prototype.hasOwnProperty.call(QUIZ_SHOPPING, quizChoice) || QUIZ_SHOPPING[quizChoice].category !== input.category)) {
+    throw new Error('Choose a valid shopping example.');
+  }
+  return { occasion: input.occasion, category: input.category, style, maxPrice, quizChoice };
 }
 function buildShoppingQuery(input) {
   const search = validateSearch(input);
   const nouns = { top: 'clothing top', bottom: 'pants skirt shorts', shoes: 'shoes', layer: 'jacket cardigan', accessory: 'fashion accessory' };
-  return [search.style, search.occasion, nouns[search.category]].filter(Boolean).join(' ');
+  return [search.style, search.occasion, (search.quizChoice ? QUIZ_SHOPPING[search.quizChoice].terms : nouns[search.category])].filter(Boolean).join(' ');
 }
 function safeHttps(value) {
   try {

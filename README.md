@@ -105,5 +105,17 @@ See `docs/CHECKPOINT.md` for implemented features, remaining requirements,
 mentor hosting handoff, demo instructions and verification limits. Run `npm test`
 for all logic suites and `npm run evaluate:checkpoint` for controlled sample cases.
 The weather quiz now previews illustrative sleeve lengths, bottoms and a layer
-without changing the user's saved avatar appearance or quiz selections. It does
-not yet implement the circular carousel or real product garments in the quiz.
+without changing the user's saved avatar appearance or quiz selections. The later orbit milestone adds arc browsing and an optional real-product example
+loader; hosted live products and exact product garments remain unverified.
+
+## Orbit carousel and dataset baseline
+
+Weather questions now browse answer ideas in an arc around the avatar, with
+explicit Add to answers confirmation. Choice-specific shopping examples are wired
+for the hosted service; unavailable live data is clearly labeled. See
+`docs/CAROUSEL.md` for behavior and verification limits.
+
+`npm run evaluate:polyvore -- /path/to/polyvore-data` reproduces an offline
+category-pair baseline on the original dataset. Its measured ROC-AUC is 0.735029
+on 7,061 evaluable compatibility examples. This is neither app accuracy nor a
+personalized match score; see `docs/POLYVORE-EVALUATION.md` for method and limitations.

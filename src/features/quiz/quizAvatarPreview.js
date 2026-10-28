@@ -12,10 +12,10 @@ const CHOICES = {
   'minimal-extra': { label: 'Minimal extra protection', sleeves: 'short', bottoms: 'long', layer: false },
 };
 /** Return an illustration of the most recent outfit choice, without changing saved appearance. */
-function quizAvatarPreview(answers, questionId) {
+function quizAvatarPreview(answers, questionId, previewId = '') {
   const groups = { q5: 'coldOutfits', q6: 'hotOutfits', q7: 'rainOutfits' };
   const choices = answers?.[questionId]?.[groups[questionId]];
   const last = Array.isArray(choices) ? choices[choices.length - 1] : '';
-  return CHOICES[last] || { label: 'Choose an outfit idea to preview', sleeves: 'short', bottoms: 'long', layer: false };
+  return CHOICES[previewId] || CHOICES[last] || { label: 'Choose an outfit idea to preview', sleeves: 'short', bottoms: 'long', layer: false };
 }
 module.exports = { quizAvatarPreview };

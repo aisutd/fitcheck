@@ -41,7 +41,8 @@
     "test:shopping": "node scripts/test-shopping.cjs",
     "test": "node scripts/test-all.cjs",
     "test:checkpoint": "node scripts/test-checkpoint.cjs",
-    "evaluate:checkpoint": "node scripts/evaluate-checkpoint.cjs"
+    "evaluate:checkpoint": "node scripts/evaluate-checkpoint.cjs",
+    "evaluate:polyvore": "node scripts/evaluate-polyvore.cjs"
   },
   "private": true,
   "devDependencies": {

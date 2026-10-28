@@ -8,5 +8,6 @@ assert.equal(quizAvatarPreview(answers, 'q6').bottoms, 'long');
 assert.equal(quizAvatarPreview(answers, 'q7').layer, true);
 assert.equal(quizAvatarPreview({}, 'q5').label, 'Choose an outfit idea to preview');
 assert.equal(quizAvatarPreview({ q5: { coldOutfits: ['invalid'] } }, 'q5').layer, false);
+assert.equal(quizAvatarPreview(answers, 'q5', 'warm-layers').bottoms, 'long', 'browsing can preview without changing saved selections');
 assert.equal(JSON.stringify(answers), original, 'visual preview must not rewrite quiz selections');
 console.log('Passed live quiz avatar mapping, missing-choice fallback and answer preservation checks.');

@@ -1,0 +1,117 @@
+{
+  "source": "https://github.com/xthan/polyvore-dataset",
+  "method": "Smoothed category-pair log lift, averaged over distinct category pairs; trained only on training outfits",
+  "trainingOutfits": 17316,
+  "trainingOutfitsWithDistinctCategoryPairs": 17299,
+  "heldOutOutfits": 3076,
+  "trainingTestOutfitIdOverlap": 0,
+  "evaluatedRows": 7061,
+  "skippedRows": 15,
+  "skippedMissingMetadata": 0,
+  "skippedNoSupportedPairs": 15,
+  "compatible": {
+    "count": 3061,
+    "meanScore": 0.5048015064810195
+  },
+  "incompatible": {
+    "count": 4000,
+    "meanScore": -0.01564348387702583
+  },
+  "rocAuc": 0.7350289121202221,
+  "constantScoreBaselineAuc": 0.5,
+  "frequentTrainingPairs": [
+    {
+      "categories": [
+        "Mascara",
+        "Lipstick"
+      ],
+      "cooccurringTrainingOutfits": 333,
+      "logLift": 1.0655224955440596
+    },
+    {
+      "categories": [
+        "Backpacks",
+        "Sneakers"
+      ],
+      "cooccurringTrainingOutfits": 617,
+      "logLift": 1.0229142222414886
+    },
+    {
+      "categories": [
+        "Scarves",
+        "Sweaters"
+      ],
+      "cooccurringTrainingOutfits": 262,
+      "logLift": 0.947288897817715
+    },
+    {
+      "categories": [
+        "Tank Tops",
+        "Shorts"
+      ],
+      "cooccurringTrainingOutfits": 421,
+      "logLift": 0.9094898139824659
+    },
+    {
+      "categories": [
+        "Clutches",
+        "Cocktail Dresses"
+      ],
+      "cooccurringTrainingOutfits": 391,
+      "logLift": 0.8999081733138626
+    },
+    {
+      "categories": [
+        "Eyeshadow",
+        "Lipstick"
+      ],
+      "cooccurringTrainingOutfits": 421,
+      "logLift": 0.8733478748048991
+    },
+    {
+      "categories": [
+        "T-Shirts",
+        "Sneakers"
+      ],
+      "cooccurringTrainingOutfits": 591,
+      "logLift": 0.8208871317556814
+    },
+    {
+      "categories": [
+        "Pumps",
+        "Cocktail Dresses"
+      ],
+      "cooccurringTrainingOutfits": 408,
+      "logLift": 0.8179927045658781
+    },
+    {
+      "categories": [
+        "Blazers",
+        "Pumps"
+      ],
+      "cooccurringTrainingOutfits": 271,
+      "logLift": 0.7684600736680933
+    },
+    {
+      "categories": [
+        "T-Shirts",
+        "Skinny Jeans"
+      ],
+      "cooccurringTrainingOutfits": 469,
+      "logLift": 0.6657674854602363
+    }
+  ],
+  "limitations": [
+    "Offline category-only baseline; not the app runtime recommender or a trained visual model.",
+    "No personal preference, weather, occasion, image or color labels are evaluated.",
+    "Repeated categories are collapsed; unsupported pairs are skipped; item identities and arrangement are ignored.",
+    "No threshold is tuned on the test labels. Original dataset negative construction may favor category-level cues.",
+    "Dataset is historical and does not establish performance on current users or retailers."
+  ],
+  "sha256": {
+    "train_no_dup.json": "afac784bbf2afd749d2f85a5562f4d48ef41b6f2e1b5a19ae1952cefc9bc99d3",
+    "test_no_dup.json": "35e795a588c2eacbe081a4e2ee920a3993dd6b687f5c1f4964038bb5244d74ef",
+    "fashion_compatibility_prediction.txt": "31699a6dd84714ceb8bd56f1a6616af2a66622fc94478007dd55253909b1358a",
+    "category_id.txt": "0fa149516d9003d8829ba6cac2abf833ce3584aa75769709476746a80fc99979"
+  }
+}

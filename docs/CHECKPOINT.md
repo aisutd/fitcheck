@@ -13,15 +13,15 @@ model or an LLM call. AI_PROMPT.md is a reference prompt, not the active backend
 | Personal weather exceptions in Date Night | Implemented for supported answers and explicit garment metadata |
 | Repeat observations to learn preference frequency | Not implemented; current evidence is individual quiz answers |
 | Live avatar while answering | Implemented for cold/hot/rain outfit choices, using illustrative geometry |
-| Circular clothing carousel | Not implemented; existing selectable answer cards remain |
-| Real shopping products in quiz carousel | Not implemented; needs live API and carousel work |
+| Circular clothing carousel | Arc carousel implemented; manual browsing plus explicit answer selection |
+| Real shopping products in quiz carousel | Choice-specific loader implemented; live access remains unconfigured and unverified |
 | Avatar after quiz | Implemented on first profile save; optional customization and continue action |
 | Adaptive 3D quality | Studio startup adaptation plus manual Low/Standard; quiz uses lightweight rendering |
 | Reduced motion/accessibility | Explicit controls, no automatic rotation, selection labels, progress, error fallback; assistive-tech audit pending |
 | Editorial A+C presentation | Existing typography, sage/forest palette and restrained cards preserved |
 | Shopping screen/backend | Implemented; missing pieces first, optional alternatives, USD budget and external links |
 | Live Google Shopping results | Pending reachable hosting and private SerpApi key; no live request verified |
-| Polyvore compatibility evaluation | Not done; synthetic behavioral checks do not replace it |
+| Polyvore compatibility evaluation | Offline category baseline measured; runtime personalization and human evaluation remain separate |
 | Skin-tone palette guidance | Not implemented; avatar tone is user-selected and does not infer race |
 | Travel, sleepwear, concerts and social inspiration | Ideas discussed; no corresponding features implemented |
 | iOS/Android | Platform bundles built; native runtime interaction verification remains pending |
@@ -42,7 +42,7 @@ model or an LLM call. AI_PROMPT.md is a reference prompt, not the active backend
 
 ## Reproducible validation
 
-Recorded for this checkpoint: all 10 logic suites pass; lint reports no errors
+Recorded for this checkpoint: all 12 logic suites pass; lint reports no errors
 or warnings; scoped JavaScript model checking passes; iOS, Android and web
 bundles export successfully. Three.js scene properties are excluded from the
 DOM-only unknown-property lint rule in the three scene-rendering files.
@@ -62,8 +62,8 @@ its expected behavior; do not describe all cases as improvements over baseline.
 1. Open Wardrobe and select Demo Mode; sample records stay separate from owned items.
 2. Complete Know You: select a style, fit and exactly three ranked priorities.
 3. In the cold-weather question choose Shorts & a Light Top. Observe the short
-   bottoms preview, then select a different outfit idea and observe the update.
-   When two choices are selected, the most recently selected outfit is previewed.
+   bottoms preview, then browse other cards without changing answers. Use Add to
+   answers to confirm a choice. A maximum of two answers is enforced explicitly.
 4. Review answers and save. First-time users enter Avatar Studio; See outfits skips it.
 5. Select Date Night and Cold. Inspect the outfit and Why this outfit details.
 6. Edit the cold-weather answer to Warm Layers, save, and compare the top result.
@@ -109,3 +109,5 @@ not proof of native UI, graphics, permission, persistence or accessibility behav
 The next runtime pass must cover quiz resume/review/save, avatar graphics fallback,
 return navigation, large text, screen-reader labels and shopping network states on
 both platforms. Physical-device 3D verification remains necessary afterward.
+
+Later update: see docs/CAROUSEL.md and docs/POLYVORE-EVALUATION.md for the carousel and real-data baseline. Simulator troubleshooting remains deferred; hosting/key ownership remains unconfirmed.

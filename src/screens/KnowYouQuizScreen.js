@@ -340,10 +340,11 @@ export default function KnowYouQuizScreen({
               </View>
 
               {['q5', 'q6', 'q7'].includes(question.id) ? (
-                <QuizAvatarPreview answers={answers} questionId={question.id} customization={avatarCustomization} />
+                <QuizAvatarPreview key={question.id} answers={answers} questionId={question.id} customization={avatarCustomization} group={question.groups[0]} onChoose={chooseOption} />
               ) : null}
 
-              {question.groups.map((group) => {
+              {question.groups.map((group, groupIndex) => {
+                if (groupIndex === 0 && ['q5', 'q6', 'q7'].includes(question.id)) return null;
                 const groupAnswer = answers[question.id][group.id];
                 const selected = group.selection === 'single'
                   ? groupAnswer

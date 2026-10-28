@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { getUserId, visibilityError } from './closetVisibility';
 import { supabase } from './supabase';
-import { initialMockData, MockData } from '../privacyData';
+import { MockData } from '../privacyData';
 
 export type DemoRecords = Omit<MockData, 'memory'>;
 export const initialDemoRecords: DemoRecords = {
-  closet: initialMockData.closet, bodyPhotos: initialMockData.bodyPhotos,
-  tryOns: initialMockData.tryOns, chats: initialMockData.chats, outfits: initialMockData.outfits,
+  closet: [], bodyPhotos: [], tryOns: [], chats: [], outfits: [],
 };
 
 export const retentionOptions = ['After processing', 'After 24 hours', 'Keep until I delete'] as const;
@@ -114,7 +113,7 @@ export function usePrivacyPreference<K extends keyof Preferences>(field: K, init
       setValue(next); setMessage('Preference saved.');
       return true;
     } catch (error) {
-      setMessage(`Not saved. ${visibilityError(error)} Previous preference unchanged.`);
+      setMessage(`Not saved. ${visibilityError(error)} Refresh to confirm the current saved value.`);
       return false;
     } finally { saving.current = false; setState('ready'); }
   }

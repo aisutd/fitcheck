@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { exportCloset } from './exportCloset';
+import { exportPrivateData } from './lib/exportPrivateData';
+import { privacyRequest, resetPrivacyScreen } from './lib/privacyApi';
 import { MockData } from './privacyData';
 import { initialDemoRecords, retentionOptions, usePrivacyPreference } from './lib/privacyPreferences';
 
@@ -45,7 +46,7 @@ export function PhotoRetentionSettings() {
     {open && <Animated.View style={s.options}>{retentionOptions.map(option => <Pressable accessibilityRole="button" accessibilityState={{ selected: retention === option }} key={option} style={[s.option, retention === option && { backgroundColor: '#F1EAFB' }]} onPress={() => { setOpen(false); void preference.save(option); }}><Text style={s.rowTitle}>{option}</Text>{retention === option && <Ionicons name="checkmark-circle" color={colors.purple} size={20} />}</Pressable>)}</Animated.View>}
     <Text accessibilityLiveRegion="polite" style={s.description}>{preference.message}</Text>
     {preference.state === 'error' && <Pressable accessibilityRole="button" onPress={preference.retry} style={s.textButton}><Text style={s.textButtonText}>Retry photo retention</Text></Pressable>}
-    <Text style={s.note}>Preference saved to your account. Automatic photo deletion will apply when photo processing is connected.</Text>
+    <Text style={s.note}>Applies to uploaded originals, including those already retained. Timed cleanup runs while the backend is running. Previews remain until you delete them.</Text>
   </Card>;
 }
 
@@ -67,16 +68,26 @@ export function PrivacyExtras({ data, setData, notify, Toggle }: Props) {
   const [deleteKey, setDeleteKey] = useState<DeleteKey | null>(null);
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [categoryError, setCategoryError] = useState('');
+  const [photoCounts, setPhotoCounts] = useState<Record<string, number>>({});
+  const [photosReady, setPhotosReady] = useState(false);
+  useEffect(() => {
+    void privacyRequest('/privacy/photos').then(response => response.json()).then(body => {
+      const counts: Record<string, number> = {};
+      for (const photo of body.photos) counts[photo.category] = (counts[photo.category] || 0) + 1;
+      setPhotoCounts(counts); setPhotosReady(true);
+    }).catch(error => setCategoryError(String(error.message || error)));
+  }, []);
   const deleteBusy = React.useRef(false);
   async function deleteCategory() {
     if (!deleteKey || deleteBusy.current || records.state !== 'ready') return;
     deleteBusy.current = true;
-    setDeleting(true);
+    setDeleting(true); setCategoryError('');
     try {
-      const next = { ...records.value, [deleteKey]: [], ...(deleteKey === 'closet' ? { outfits: [] } : {}) };
-      const saved = await records.save(next);
-      if (saved) { setDeleteKey(null); notify(`${deleteName} deleted from your saved demo records.`); }
-    } finally { deleteBusy.current = false; setDeleting(false); }
+      await privacyRequest(`/privacy/categories/${deleteKey}`, { method: 'DELETE' });
+      resetPrivacyScreen();
+    } catch (error) { setCategoryError(error instanceof Error ? error.message : 'Deletion failed. Retry.'); }
+    finally { deleteBusy.current = false; setDeleting(false); }
   }
   const deleteName = deletable.find(item => item.key === deleteKey)?.name;
   const saveMemory = async () => {
@@ -89,8 +100,8 @@ export function PrivacyExtras({ data, setData, notify, Toggle }: Props) {
   const download = async () => {
     setExporting(true);
     try {
-      await exportCloset(JSON.stringify({ app: 'Fitcheck', demo: true, exportedAt: new Date().toISOString(), closet: data.closet, savedOutfits: data.outfits, note: 'Sample item metadata only. This mockup contains no uploaded photo files.' }, null, 2));
-      notify(Platform.OS === 'web' ? 'Your mock closet download has started.' : 'Mock closet export opened in your device’s share sheet.');
+      await exportPrivateData();
+      notify(Platform.OS === 'web' ? 'Your data export download has started.' : 'Your data export is ready to share.');
     } catch { notify('Could not export your closet. Please try again on a device with file sharing.'); }
     finally { setExporting(false); }
   };
@@ -102,11 +113,11 @@ export function PrivacyExtras({ data, setData, notify, Toggle }: Props) {
       {trainingPreference.state === 'error' && <Pressable accessibilityRole="button" onPress={trainingPreference.retry} style={s.textButton}><Text style={s.textButtonText}>Retry AI consent</Text></Pressable>}
       <Text style={s.note}>Consent is saved and can be withdrawn here. No AI provider is connected; no photos or chats are sent for training.</Text>
     </Card>
-    <Card title="Photo Protection" description="Preview safeguards to apply before a photo leaves your device." icon="eye-off-outline">
+    <Card title="Photo Protection" description="Choose protection for previews made by the private backend." icon="eye-off-outline">
       <SavedToggle title="Blur faces" description="Conceal faces in clothing photos." field="blur_faces" initial={true} Toggle={Toggle} />
       <SavedToggle title="Hide the background" description="Keep your room and surroundings out of view." field="blur_background" initial={true} Toggle={Toggle} />
       <SavedToggle title="Remove location metadata" description="Strip embedded GPS information." field="strip_location" initial={true} Toggle={Toggle} />
-      <Text style={s.note}>Your protection preferences are saved. Image editing and metadata removal will apply when photo processing is connected.</Text>
+      <Text style={s.note}>The uploader uses a generic preview when protection is on, rather than selectively detecting faces or backgrounds. Preview location metadata is always removed.</Text>
     </Card>
     <Text style={s.section}>SHOPPING & PERSONALIZATION</Text>
     <Card title="Shopping Privacy" description="Keep helpful recommendations on your terms." icon="bag-handle-outline">
@@ -122,14 +133,15 @@ export function PrivacyExtras({ data, setData, notify, Toggle }: Props) {
       <Pressable accessibilityRole="button" disabled={memory.state !== 'ready' || !Object.values(data.memory).some(Boolean)} style={({ pressed }) => [s.textButton, (pressed || !Object.values(data.memory).some(Boolean)) && s.pressed]} onPress={() => { void memory.save({ style: '', size: '', budget: '' }).then(saved => { if (saved) notify('Your saved preferences have been forgotten.'); }); }}><Text style={s.textButtonText}>Forget all preferences</Text></Pressable>
     </Card>
     <Text style={s.section}>MANAGE YOUR DATA</Text>
-    <Card title="Delete by Category" description="Delete the saved demo records in one category." icon="trash-outline">
+    <Card title="Delete by Category" description="Delete saved records and photos in one category." icon="trash-outline">
       <Text accessibilityLiveRegion="polite" style={s.description}>{records.message}</Text>
       {records.state === 'error' && <Pressable accessibilityRole="button" style={s.textButton} onPress={records.retry}><Text style={s.textButtonText}>Retry saved records</Text></Pressable>}
-      {deletable.map(item => <View key={item.key} style={s.settingRow}><View style={{ flex: 1 }}><Text style={s.rowTitle}>{item.name}</Text><Text style={s.description}>{data[item.key].length} mock {data[item.key].length === 1 ? 'record' : 'records'}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`Delete ${item.name.toLowerCase()}`} disabled={records.state !== 'ready' || !data[item.key].length} onPress={() => setDeleteKey(item.key)} style={({ pressed }) => [s.smallButton, (pressed || !data[item.key].length) && s.pressed]}><Text style={s.textButtonText}>{data[item.key].length ? 'Delete' : 'Cleared'}</Text></Pressable></View>)}
+      <Text accessibilityLiveRegion="polite" style={s.error}>{categoryError}</Text>
+      {deletable.map(item => <View key={item.key} style={s.settingRow}><View style={{ flex: 1 }}><Text style={s.rowTitle}>{item.name}</Text><Text style={s.description}>{data[item.key].length + (photoCounts[item.key] || 0)} saved records/photos</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`Delete ${item.name.toLowerCase()}`} disabled={records.state !== 'ready' || !photosReady || !(data[item.key].length + (photoCounts[item.key] || 0))} onPress={() => setDeleteKey(item.key)} style={({ pressed }) => [s.smallButton, (pressed || !(data[item.key].length + (photoCounts[item.key] || 0))) && s.pressed]}><Text style={s.textButtonText}>{data[item.key].length + (photoCounts[item.key] || 0) ? 'Delete' : 'Cleared'}</Text></Pressable></View>)}
     </Card>
-    <Card title="Download My Closet" description="Take your closet items and saved outfits with you." icon="download-outline">
-      <Pressable accessibilityRole="button" disabled={exporting} style={({ pressed }) => [s.button, (pressed || exporting) && s.pressed]} onPress={download}><Ionicons name="download-outline" color={colors.deep} size={18} /><Text style={s.buttonText}>{exporting ? 'Preparing export…' : 'Export mock closet · JSON'}</Text></Pressable>
-      <Text style={s.note}>Includes current sample item details and saved outfits. This demo has no photo files to export.</Text>
+    <Card title="Download My Data" description="Take your closet items and saved outfits with you." icon="download-outline">
+      <Pressable accessibilityRole="button" disabled={exporting} style={({ pressed }) => [s.button, (pressed || exporting) && s.pressed]} onPress={download}><Ionicons name="download-outline" color={colors.deep} size={18} /><Text style={s.buttonText}>{exporting ? 'Preparing export…' : (Platform.OS === 'web' ? 'Export my data - ZIP' : 'Export my data - JSON')}</Text></Pressable>
+      <Text style={s.note}>The browser ZIP includes saved preferences, records, and retained photo files. Mobile exports contain metadata as JSON.</Text>
     </Card>
     <Modal visible={editing} transparent animationType="fade" onRequestClose={() => setEditing(false)}>
       <View style={s.overlay}><Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Cancel editing" onPress={() => setEditing(false)} /><ScrollView style={s.dialogScroll} contentContainerStyle={s.dialog} keyboardShouldPersistTaps="handled">
@@ -141,8 +153,8 @@ export function PrivacyExtras({ data, setData, notify, Toggle }: Props) {
       </ScrollView></View>
     </Modal>
     <Modal visible={deleteKey !== null} transparent animationType="fade" onRequestClose={() => setDeleteKey(null)}>
-      <View style={s.overlay}><Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Cancel deletion" onPress={() => setDeleteKey(null)} /><View style={s.dialog} accessibilityViewIsModal><Text style={s.dialogTitle}>Delete {deleteName?.toLowerCase()}?</Text><Text style={s.description}>This removes only this category’s mock records in the current session.{deleteKey === 'closet' ? ' Saved outfits referencing these items will also be cleared.' : ''} There are no uploaded photo files in this demo.</Text>
-        <Text accessibilityLiveRegion="polite" style={s.description}>{records.message}</Text>
+      <View style={s.overlay}><Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Cancel deletion" onPress={() => setDeleteKey(null)} /><View style={s.dialog} accessibilityViewIsModal><Text style={s.dialogTitle}>Delete {deleteName?.toLowerCase()}?</Text><Text style={s.description}>This permanently removes this category from saved app data.{deleteKey === 'closet' ? ' Saved outfits referencing these items will also be cleared.' : ''} Uploaded originals and previews in this category will be removed.</Text>
+        <Text accessibilityLiveRegion="polite" style={s.description}>{categoryError || records.message}</Text>
         <Pressable accessibilityRole="button" disabled={deleting || records.state !== 'ready'} style={[s.button, s.primaryButton]} onPress={() => { void deleteCategory(); }}><Text style={s.primaryText}>{deleting ? 'Deleting...' : `Delete ${deleteName?.toLowerCase()}`}</Text></Pressable>
         <Pressable accessibilityRole="button" disabled={deleting} style={s.textButton} onPress={() => setDeleteKey(null)}><Text style={s.textButtonText}>Cancel</Text></Pressable>
       </View></View>

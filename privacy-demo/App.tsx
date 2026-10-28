@@ -5,7 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PhotoRetentionSettings, PrivacyExtras } from './PrivacyExtras';
-import { countMockRecords, emptyMockData, initialMockData } from './privacyData';
+import { PhotoLibrary } from './PhotoLibrary';
+import { privacyRequest, resetPrivacyScreen, onPrivacyReset } from './lib/privacyApi';
+import { SecurityActivity } from './SecurityActivity';
+import { countMockRecords, initialMockData } from './privacyData';
 import { usePrivacyPreference } from './lib/privacyPreferences';
 import { loadClosetVisibility, saveClosetVisibility, visibilityError } from './lib/closetVisibility';
 
@@ -36,13 +39,16 @@ function Toggle({ enabled, onChange, label = 'Automatically delete photos', disa
 export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () => void; privacyPolicyUrl?: string }) {
   const [privacy, setPrivacy] = useState<Privacy>('Private');
   const [visibilityState, setVisibilityState] = useState<'loading' | 'ready' | 'saving' | 'error'>('loading');
-  const [visibilityMessage, setVisibilityMessage] = useState('Loading your saved visibility?');
+  const [visibilityMessage, setVisibilityMessage] = useState('Loading your saved visibility...');
   const [visibilityAttempt, setVisibilityAttempt] = useState(0);
   const visibilitySaving = useRef(false);
   const mirrorPreference = usePrivacyPreference('private_mirror', true);
   const privateMirror = mirrorPreference.value;
   const [dropdown, setDropdown] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [photoCount, setPhotoCount] = useState(0);
   const [policyVisible, setPolicyVisible] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [data, setData] = useState(initialMockData);
@@ -61,7 +67,7 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
   useEffect(() => {
     let active = true;
     setVisibilityState('loading');
-    setVisibilityMessage('Loading your saved visibility?');
+    setVisibilityMessage('Loading your saved visibility...');
     const timeout = setTimeout(() => {
       if (!active) return;
       active = false;
@@ -88,18 +94,28 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
     visibilitySaving.current = true;
     setDropdown(false);
     setVisibilityState('saving');
-    setVisibilityMessage('Saving your visibility?');
+    setVisibilityMessage('Saving your visibility...');
     try {
       await saveClosetVisibility(value);
       // Update only after the database confirms the write.
       setPrivacy(value);
       setVisibilityMessage('Visibility saved.');
     } catch (error) {
-      setVisibilityMessage(`Not saved. ${visibilityError(error)} Your previous setting is unchanged.`);
+      setVisibilityMessage(`Not saved. ${visibilityError(error)} Could not confirm the save. Refresh to check its current value.`);
     } finally {
       visibilitySaving.current = false;
       setVisibilityState('ready');
     }
+  }
+
+  async function deleteAll() {
+    if (deletingAll) return;
+    setDeletingAll(true); setDeleteError('');
+    try {
+      await privacyRequest('/privacy/data', { method: 'DELETE' });
+      resetPrivacyScreen();
+    } catch (error) { setDeleteError(visibilityError(error)); }
+    finally { setDeletingAll(false); }
   }
 
   return <SafeAreaView style={s.safe}>
@@ -137,6 +153,7 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
       </View>
 
       <PhotoRetentionSettings />
+      <PhotoLibrary onCount={setPhotoCount} />
 
       <View style={[s.card, s.mirrorCard]}>
         <Text accessibilityLiveRegion="polite" style={s.description}>{mirrorPreference.message}</Text>
@@ -151,17 +168,18 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
         </View>
         <View style={s.mirrorMode}>
           <Icon name={privateMirror ? 'person-outline' : 'camera-outline'} color={privateMirror ? C.teal : C.purple} size={24} />
-          <View style={{ flex: 1 }}><Text style={s.optionTitle}>{privateMirror ? 'Faceless avatar' : 'Photo-based try-on'}</Text><Text style={s.optionDescription}>{privateMirror ? 'Designed to keep your original photo on-device.' : 'Designed for a more realistic preview using your photo.'}</Text></View>
+          <View style={{ flex: 1 }}><Text style={s.optionTitle}>{privateMirror ? 'Faceless avatar' : 'Photo-based try-on'}</Text><Text style={s.optionDescription}>{privateMirror ? 'Creates an identity-free preview in your private backend.' : 'Designed for a more realistic preview using your photo.'}</Text></View>
         </View>
-        <View style={s.hint}><Icon name="information-circle-outline" size={15} color={C.muted} /><Text style={s.hintText}>Your mirror preference is saved. Avatar generation and on-device photo processing are not connected yet.</Text></View>
+        <View style={s.hint}><Icon name="information-circle-outline" size={15} color={C.muted} /><Text style={s.hintText}>The photo uploader uses a generic protected preview when Private Mirror is on. It does not create a realistic virtual try-on.</Text></View>
       </View>
 
       <PrivacyExtras data={data} setData={setData} notify={setNotice} Toggle={Toggle} />
-      <View style={[s.sectionLine, { marginTop: 30 }]}><Text style={s.sectionTitle}>YOUR DATA</Text><Text style={s.localLabel}>ON THIS DEVICE · DEMO</Text></View>
-      <View style={s.dataCard}><View style={s.dataHeading}><View style={s.iconBox}><Icon name="server-outline" color={C.indigo} /></View><View style={{ flex: 1 }}><Text style={s.cardTitle}>A fresh start</Text><Text style={s.description}>{storedCount ? `${storedCount} mock records in this session` : 'No mock data stored'}</Text></View><Icon name={storedCount ? 'cloud-outline' : 'checkmark-circle-outline'} color={storedCount ? C.lavender : C.teal} size={25} /></View>
+      <SecurityActivity />
+      <View style={[s.sectionLine, { marginTop: 30 }]}><Text style={s.sectionTitle}>YOUR DATA</Text><Text style={s.localLabel}>YOUR ACCOUNT</Text></View>
+      <View style={s.dataCard}><View style={s.dataHeading}><View style={s.iconBox}><Icon name="server-outline" color={C.indigo} /></View><View style={{ flex: 1 }}><Text style={s.cardTitle}>A fresh start</Text><Text style={s.description}>{(storedCount + photoCount) ? `${storedCount + photoCount} saved records and photos` : 'No saved data stored'}</Text></View><Icon name={storedCount ? 'cloud-outline' : 'checkmark-circle-outline'} color={storedCount ? C.lavender : C.teal} size={25} /></View>
         <Text style={s.dataDescription}>Clear your stored information whenever you’re ready. The choice is yours.</Text>
         <Pressable accessibilityRole="button" onPress={() => setConfirm(true)} style={({ pressed }) => [s.deleteButton, pressed && s.pressed]}><Icon name="trash-outline" color={C.deep} size={19} /><Text style={s.deleteText}>Delete All My Data</Text><Icon name="arrow-forward" color={C.deep} size={18} /></Pressable>
-        <Text style={s.demoNote}>Demo only — no server data is accessed or deleted.</Text>
+        <Text style={s.demoNote}>Deletes saved app data, uploaded photos, previews, and activity history. Your sign-in account remains.</Text>
       </View>
       <View style={s.footer}><Icon name="lock-closed-outline" color={C.muted} size={13} /><Text style={s.footerText}>Your privacy isn’t a feature. It’s a promise.</Text></View>
       <Pressable accessibilityRole="link" accessibilityLabel="Read Fitcheck Privacy Policy" onPress={() => {
@@ -177,9 +195,10 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
     {notice && <Pressable accessibilityRole="button" accessibilityLabel={`${notice} Dismiss message`} accessibilityLiveRegion="polite" onPress={() => setNotice(null)} style={s.toast}><Icon name="checkmark-circle" color={C.teal} /><Text style={s.toastText}>{notice}</Text><Icon name="close" size={17} color={C.muted} /></Pressable>}
     <Modal visible={confirm} transparent animationType="fade" onRequestClose={() => setConfirm(false)}>
       <View style={s.modalOverlay}><Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Dismiss confirmation" accessibilityRole="button" onPress={() => setConfirm(false)} /><View style={s.modalCard} accessibilityViewIsModal>
-        <View style={s.modalIcon}><Icon name="trash-outline" color={C.deep} size={30} /></View><Text style={s.modalTitle}>Delete All Data?</Text><Text style={s.modalDescription}>This action will permanently delete your stored information and cannot be undone.</Text><Text style={s.modalDemo}>This preview clears mock files in this session only.</Text>
-        <Pressable accessibilityRole="button" style={({ pressed }) => [s.confirmButton, pressed && s.pressed]} onPress={() => { setData(emptyMockData); setConfirm(false); setNotice('Your data has been deleted successfully.'); }}><Text style={s.confirmText}>Delete Data</Text></Pressable>
-        <Pressable accessibilityRole="button" style={({ pressed }) => [s.cancelButton, pressed && s.pressed]} onPress={() => setConfirm(false)}><Text style={s.cancelText}>Cancel</Text></Pressable>
+        <View style={s.modalIcon}><Icon name="trash-outline" color={C.deep} size={30} /></View><Text style={s.modalTitle}>Delete All Data?</Text><Text style={s.modalDescription}>This action will permanently delete your stored information and cannot be undone.</Text><Text style={s.modalDemo}>Deletes your app data from Supabase and this backend. Your sign-in account remains. Provider backups follow their separate retention schedules.</Text>
+        <Pressable accessibilityRole="button" style={({ pressed }) => [s.confirmButton, pressed && s.pressed]} disabled={deletingAll} onPress={() => { void deleteAll(); }}><Text style={s.confirmText}>{deletingAll ? 'Deleting...' : 'Delete Data'}</Text></Pressable>
+        <Text accessibilityLiveRegion="polite" style={s.description}>{deleteError}</Text>
+        <Pressable accessibilityRole="button" disabled={deletingAll} style={({ pressed }) => [s.cancelButton, pressed && s.pressed]} onPress={() => setConfirm(false)}><Text style={s.cancelText}>Cancel</Text></Pressable>
       </View></View>
     </Modal>
     <Modal visible={policyVisible} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setPolicyVisible(false)}>
@@ -201,23 +220,23 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
           </View>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.cardTitle}>Demo information</Text>
-            <Text style={s.description}>The settings screen uses sample file names and temporary React state. No account, photo upload, authentication system, or database is connected.</Text>
+            <Text style={s.description}>This prototype uses Supabase accounts and settings, and a private Python backend for uploaded photos and activity monitoring.</Text>
           </View>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.cardTitle}>Privacy preferences</Text>
-            <Text style={s.description}>Closet visibility, photo retention, AI training consent, photo protection, and shopping permissions change local demo preferences. They do not enforce real processing rules or affect an actual Fitcheck account. These settings reset when the app reloads.</Text>
+            <Text style={s.description}>Preferences are saved to your account. Uploaded originals are removed after processing or when their deadline is due, unless you choose manual deletion. The backend must remain running for timed cleanup.</Text>
           </View>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.cardTitle}>Private Mirror preview</Text>
-            <Text style={s.description}>Private Mirror lets you preview a preference for faceless-avatar try-ons instead of photo-based try-ons. This mockup does not create avatars, process photos, or implement an on-device AI pipeline.</Text>
+            <Text style={s.description}>Private Mirror produces a generic identity-free preview in the private backend. It does not reconstruct body shape or generate realistic clothing try-ons.</Text>
           </View>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.cardTitle}>Deleting demo data</Text>
-            <Text style={s.description}>You can edit or forget saved demo preferences, delete records by category, or clear all mock information. Closet deletion also removes saved outfits. None of these actions delete information from a server or remove files from your device.</Text>
+            <Text style={s.description}>You can edit or forget saved preferences, delete records and photos by category, or delete all saved app data. Closet deletion also removes saved outfits. Deletion removes account-owned data from active app storage. Local files on your device and provider backups are outside this control.</Text>
           </View>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.cardTitle}>Exporting your closet</Text>
-            <Text style={s.description}>Download My Closet creates a JSON file containing the current sample clothing details and saved outfits. It does not include body photos, chat history, preferences, or real uploaded images.</Text>
+            <Text style={s.description}>Download My Data exports saved preferences and records. Browser ZIP downloads include retained photo files. Mobile exports contain metadata as JSON.</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -225,7 +244,11 @@ export function PrivacyDataScreen({ onBack, privacyPolicyUrl }: { onBack?: () =>
   </SafeAreaView>;
 }
 
-export default function App() { return <SafeAreaProvider><PrivacyDataScreen /></SafeAreaProvider>; }
+export default function App() {
+  const [generation, setGeneration] = useState(0);
+  useEffect(() => onPrivacyReset(() => setGeneration(value => value + 1)), []);
+  return <SafeAreaProvider><PrivacyDataScreen key={generation} /></SafeAreaProvider>;
+}
 
 const s = StyleSheet.create({
   mirrorCard: { borderColor: '#CBEAE6' },

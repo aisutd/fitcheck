@@ -4,8 +4,9 @@
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "expo start",
-    "web": "expo start --web",
+    "start": "node scripts/dev.cjs",
+    "web": "node scripts/dev.cjs --web",
+    "backend": "cd ai-model && .venv\\Scripts\\python.exe -m uvicorn server:app --host 127.0.0.1 --port 8000 --no-access-log",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit"

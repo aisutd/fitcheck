@@ -128,4 +128,3 @@ export default function AvatarFigure({ customization, yaw = 0, segments = 10, cl
     </group>
   );
 }
-

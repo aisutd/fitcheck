@@ -37,9 +37,9 @@ export function CircularAccuracy({ value }: CircularAccuracyProps) {
 
   return (
     <View
-      accessibilityLabel={hasValue ? `${safeValue}% overall accuracy` : 'No tests completed'}
+      accessibilityLabel={hasValue ? `${safeValue}% average recognition confidence` : 'No analyses completed'}
       accessibilityRole="progressbar"
-      accessibilityValue={hasValue ? { min: 0, max: 100, now: safeValue } : { text: 'No tests completed' }}
+      accessibilityValue={hasValue ? { min: 0, max: 100, now: safeValue } : { text: 'No analyses completed' }}
       style={styles.wrap}
     >
       <View style={styles.outerGlow} />
@@ -74,12 +74,15 @@ export function CircularAccuracy({ value }: CircularAccuracyProps) {
               <Text style={styles.value}>{label}</Text>
               <Text style={styles.percent}>%</Text>
             </View>
-            <Text style={styles.status}>measured accuracy</Text>
+            <Text style={styles.status}>average confidence</Text>
           </>
         ) : (
           <>
-            <Text style={styles.emptyValue}>—</Text>
-            <Text style={styles.status}>No tests completed</Text>
+            <View style={styles.valueRow}>
+              <Text style={styles.emptyValue}>—</Text>
+              <Text style={styles.percent}>%</Text>
+            </View>
+            <Text style={styles.status}>No analyses yet</Text>
           </>
         )}
       </View>

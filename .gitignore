@@ -3,6 +3,7 @@ node_modules/
 
 # Expo
 .expo/
+.expo-home/
 dist/
 web-build/
 *-dist/

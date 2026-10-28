@@ -17,6 +17,7 @@ export type AccuracyReport = {
   testedAt: string | null;
   overallAccuracy: number | null;
   totalPhotos: number;
+  totalFlags: number;
   lowAccuracyThreshold: number;
   dimensions: AccuracyDimension[];
 };

@@ -6,9 +6,30 @@ function isAnalysisResult(value: unknown): value is BiasAnalysisResult {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Partial<BiasAnalysisResult>;
   return (
+    candidate.schemaVersion === 5 &&
     typeof candidate.analysisId === 'string' &&
     typeof candidate.model === 'string' &&
     candidate.evidenceScope === 'single_image' &&
+    Boolean(
+      candidate.recognition &&
+      typeof candidate.recognition.garmentCategory === 'string' &&
+      typeof candidate.recognition.categoryConfidence === 'number' &&
+      typeof candidate.recognition.pattern === 'string' &&
+      typeof candidate.recognition.patternConfidence === 'number' &&
+      typeof candidate.recognition.patternExplanation === 'string' &&
+      typeof candidate.recognition.overallConfidence === 'number'
+    ) &&
+    Boolean(
+      candidate.skinToneAssessment &&
+      typeof candidate.skinToneAssessment.visibleToneBand === 'string' &&
+      (candidate.skinToneAssessment.riskScore === null || typeof candidate.skinToneAssessment.riskScore === 'number')
+    ) &&
+    Boolean(
+      candidate.bodyTypeAssessment &&
+      typeof candidate.bodyTypeAssessment.visibleGroup === 'string' &&
+      typeof candidate.bodyTypeAssessment.confidence === 'number' &&
+      typeof candidate.bodyTypeAssessment.explanation === 'string'
+    ) &&
     typeof candidate.summary === 'string' &&
     typeof candidate.scopeNote === 'string' &&
     Array.isArray(candidate.findings) &&
@@ -45,7 +66,12 @@ export async function analyzeBiasImage(image: BiasImageInput): Promise<BiasAnaly
         : 'The AI analysis could not be completed.';
       throw new Error(message);
     }
-    if (!isAnalysisResult(payload)) throw new Error('The AI service returned an invalid response.');
+    if (!isAnalysisResult(payload)) {
+      const version = payload && typeof payload === 'object' && 'schemaVersion' in payload
+        ? String((payload as { schemaVersion: unknown }).schemaVersion)
+        : 'missing';
+      throw new Error(`The AI backend response is out of date (schema ${version}; expected 5). Restart the backend and try again.`);
+    }
     return payload;
   } finally {
     clearTimeout(timeout);

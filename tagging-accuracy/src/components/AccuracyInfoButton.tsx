@@ -72,18 +72,18 @@ export function AccuracyInfoButton({ totalPhotos, lowAccuracyThreshold = 75, sty
                   </Pressable>
                 </View>
                 <Text style={styles.kicker}>BEHIND THE SCORE</Text>
-                <Text style={styles.title}>How accurate is AI tagging?</Text>
+                <Text style={styles.title}>What does the AI score mean?</Text>
                 <Text style={styles.body}>
-                  Accuracy is the percentage of test photos where FitCheck’s predicted tag matched the human-reviewed answer.
+                  The headline AI score averages the model’s clothing-recognition confidence across every analyzed photo. Confidence is not the same as measured accuracy.
                 </Text>
                 <LinearGradient colors={['rgba(141,231,255,0.12)', 'rgba(163,123,255,0.14)']} end={{ x: 1, y: 0 }} start={{ x: 0, y: 0 }} style={styles.formula}>
-                  <Text style={styles.formulaText}>correct tags</Text><Text style={styles.formulaSymbol}>÷</Text>
-                  <Text style={styles.formulaText}>tested photos</Text><Text style={styles.formulaSymbol}>× 100</Text>
+                  <Text style={styles.formulaText}>sum of image scores</Text><Text style={styles.formulaSymbol}>÷</Text>
+                  <Text style={styles.formulaText}>analyzed photos</Text>
                 </LinearGradient>
                 <Text style={styles.body}>
                   {totalPhotos > 0
-                    ? `This report uses ${totalPhotos.toLocaleString()} photos. Results below ${lowAccuracyThreshold}% glow coral so performance gaps stand out. Lighting, image quality, and test-set representation can all affect the score.`
-                    : 'No tests have been completed. Accuracy will appear only after predictions are compared with human-reviewed answers across a labeled evaluation set.'}
+                    ? `This score uses ${totalPhotos.toLocaleString()} analyzed photos. Pattern confidence appears immediately; confirmed accuracy still comes from your reviews. Values below ${lowAccuracyThreshold}% glow coral.`
+                    : 'No photos have been analyzed. The score appears after the first completed AI analysis and updates with every additional image.'}
                 </Text>
                 <Text style={styles.disclaimer}>AI can make mistakes—review important details before saving.</Text>
                 <Pressable

@@ -8,10 +8,11 @@ import { analyzeWithGemini } from './gemini.js';
 import { acceptedImageTypes, isValidImage } from './imageValidation.js';
 
 const app = express();
+const schemaVersion = 5;
 const port = Number(process.env.PORT ?? 8787);
 const model = process.env.GEMINI_MODEL ?? 'gemini-3.8-flash';
 const allowedOrigins = new Set(
-  (process.env.ALLOWED_ORIGINS ?? 'http://localhost:8081,http://localhost:8086')
+  (process.env.ALLOWED_ORIGINS ?? 'http://localhost:8081,http://localhost:8086,http://localhost:8087,http://localhost:8089,http://localhost:8091,http://localhost:8093,http://localhost:8094,http://localhost:8095')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
@@ -53,7 +54,7 @@ app.use((request, response, next) => {
 });
 
 app.get('/health', (_request, response) => {
-  response.json({ ok: true, model, configured: Boolean(process.env.GEMINI_API_KEY) });
+  response.json({ ok: true, model, configured: Boolean(process.env.GEMINI_API_KEY), schemaVersion });
 });
 
 app.post('/api/bias/analyze', upload.single('image'), async (request, response) => {
@@ -76,6 +77,7 @@ app.post('/api/bias/analyze', upload.single('image'), async (request, response) 
 
     response.json({
       ...analysis,
+      schemaVersion,
       analysisId: requestId,
       model,
       analyzedAt: new Date().toISOString(),

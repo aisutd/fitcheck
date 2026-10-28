@@ -5,10 +5,11 @@ import { AccuracyReport } from '../types/accuracy';
  * human-reviewed ground truth; individual image analyses are not accuracy tests.
  */
 export const emptyAccuracyReport: AccuracyReport = {
-  modelName: 'Gemini 3.8 Flash',
+  modelName: 'Recognition model not tested',
   testedAt: null,
   overallAccuracy: null,
   totalPhotos: 0,
+  totalFlags: 0,
   lowAccuracyThreshold: 75,
   dimensions: [
     {
@@ -20,7 +21,7 @@ export const emptyAccuracyReport: AccuracyReport = {
     {
       id: 'patterns',
       title: 'Patterns',
-      description: 'Performance when detecting the garment’s dominant pattern.',
+      description: 'Average AI confidence when detecting each garment’s dominant pattern.',
       metrics: [],
     },
     {
@@ -32,7 +33,7 @@ export const emptyAccuracyReport: AccuracyReport = {
     {
       id: 'bodyTypes',
       title: 'Body types',
-      description: 'Recognition accuracy across body-shape groups in a labeled test set.',
+      description: 'Average AI confidence across broad, image-only body-shape groups.',
       metrics: [],
     },
   ],

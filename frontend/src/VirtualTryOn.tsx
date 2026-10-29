@@ -3,9 +3,6 @@ import { Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, 
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { chooseImage, Photo, validPhoto } from './photos';
-import { generateTryOn } from './tryOnApi';
-import { useTryOnResult } from './TryOnResultContext';
-import { router } from 'expo-router';
 const C = { ivory: '#FBF7F0', tea: '#E9DCCB', cream: '#E9DFF0', lavender: '#B9A4C9', plum: '#5A4C60', card: '#FFFEFC' };
 const features = ['Virtual Closet', 'Virtual Try-On', 'Generate Outfits', 'Prompt an Outfit'];
 type Tab = 'Your Photo' | 'Garment';
@@ -29,14 +26,13 @@ function PhotoSourceSelector({ visible, onClose, onSelect }: { visible: boolean;
 }
 function PhotoGuidance() { return <View style={s.guidance}><View style={s.tipRow}><View style={s.bulb}><View style={s.bulbBase} /></View><Text style={s.tipText}>Tip: Use bright, even lighting and avoid blurry or cropped images.</Text></View><View style={s.tipRow}><Text style={s.tipIcon}>◷</Text><Text style={s.tipText}>AI processing may take a little time.</Text></View></View>; }
 function Screen() {
-  const { setResult } = useTryOnResult();
   const [active, setActive] = useState('Virtual Try-On');
   const [tab, setTab] = useState<Tab>('Your Photo');
   const [userPhoto, setUserPhoto] = useState<Photo | null>(null);
   const [garmentPhoto, setGarmentPhoto] = useState<Photo | null>(null);
   const [sourceTab, setSourceTab] = useState<Tab | null>(null);
   const [picking, setPicking] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [dots, setDots] = useState(1);
   const [message, setMessage] = useState('');
   const mounted = useRef(true), busyRef = useRef(false), controller = useRef<AbortController | null>(null);
@@ -51,12 +47,9 @@ function Screen() {
     catch (error) { if (mounted.current) setMessage(error instanceof Error ? error.message : 'Could not open the photo picker. Please try again.'); }
     finally { busyRef.current = false; if (mounted.current) setPicking(false); }
   }
-  async function generate() {
+  function generate() {
     if (busyRef.current || !validPhoto(userPhoto) || !validPhoto(garmentPhoto)) return;
-    busyRef.current = true; setDots(1); setLoading(true); setMessage(''); controller.current = new AbortController();
-    try { const result = await generateTryOn({ userPhoto, garmentPhoto }, controller.current.signal); if (mounted.current) { setResult(result); router.push('/result'); } }
-    catch (error) { if (mounted.current) setMessage(error instanceof Error ? error.message : 'Try-on failed. Please try again.'); }
-    finally { busyRef.current = false; if (mounted.current) setLoading(false); }
+    setMessage('AI generation is not connected.');
   }
   const photo = tab === 'Your Photo' ? userPhoto : garmentPhoto;
   return <SafeAreaView style={s.safe}><StatusBar style="dark" /><ScrollView contentContainerStyle={s.page}><View style={s.brandRow}><Text style={s.brand}>muse<Text style={{ color: C.lavender }}>.</Text></Text><Text style={s.brandCaption}>YOUR STYLE STUDIO</Text></View><FeatureNavigation active={active} onSelect={setActive} />{active === 'Virtual Try-On' ? <View style={s.content}><Text style={s.eyebrow}>THE FITTING ROOM</Text><Text style={s.title}>Virtual Try-On</Text><Text style={s.subtitle}>See how your favorite pieces look on you.</Text><UploadTabs tab={tab} onSelect={setTab} /><PhotoUploadCard tab={tab} photo={photo} height={Math.max(330, Math.min(460, height * .43))} busy={loading || picking} onChoose={() => setSourceTab(tab)} onRemove={() => update(tab, null)} onError={() => { update(tab, null); controller.current?.abort(); setMessage('This image could not be displayed. Please choose another photo.'); }} /><PhotoGuidance /><Button title={loading ? `Generating${'.'.repeat(dots)}` : 'Generate Try-On'} disabled={loading || picking || !validPhoto(userPhoto) || !validPhoto(garmentPhoto)} onPress={generate} />{!!message && <Text accessibilityLiveRegion="polite" style={s.message}>{message}</Text>}<Text style={s.footer}>Your style, seen in a new light.</Text></View> : <View style={s.content}><Text style={s.eyebrow}>YOUR STYLE STUDIO</Text><Text style={s.title}>{active}</Text><Text style={s.subtitle}>This part of your studio is coming soon.</Text><Button title="Open Virtual Try-On" secondary onPress={() => setActive('Virtual Try-On')} /></View>}</ScrollView><PhotoSourceSelector visible={sourceTab !== null} onClose={() => setSourceTab(null)} onSelect={select} /></SafeAreaView>;

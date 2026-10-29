@@ -1,16 +1,18 @@
 import { useStyleMemory, updateStyleMemory } from '../features/suggest/styleMemoryStore';
 import { recordFeedback, toggleSavedLook } from '../features/suggest/styleMemoryModel';
 import { router } from 'expo-router';
+import OutfitArtwork from '../components/OutfitArtwork';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { OCCASIONS, WARDROBE, generateRecommendations } = require('../features/suggest/outfitRecommendations');
 const { getActiveWardrobeItems } = require('../features/wardrobe/wardrobeModel');
@@ -26,7 +28,6 @@ const OCCASION_NOTES = {
   Sleepwear: 'Your sleepwear pieces, with footwear optional.',
 };
 
-const OCCASION_INDEX = Object.fromEntries(OCCASIONS.map((item, index) => [item, String(index + 1).padStart(2, '0')]));
 
 export default function SuggestScreen({
   profile = null,
@@ -42,6 +43,11 @@ export default function SuggestScreen({
   onOpenAvatarStudio = () => {},
   onRetryStorage = () => {},
 }) {
+  const { width, fontScale } = useWindowDimensions();
+  const columns = fontScale > 1.3 ? 1 : width >= 1100 ? 3 : width >= 720 ? 2 : 1;
+  const cardWidth = (Math.min(1200, width - 40) - (columns - 1) * 20) / columns;
+  const [showRefine, setShowRefine] = useState(false);
+  const [openLook, setOpenLook] = useState('');
   const wardrobeMode = wardrobeState?.mode || 'personal';
   const memory = useStyleMemory();
   const [memoryBusy, setMemoryBusy] = useState(false);
@@ -126,708 +132,219 @@ export default function SuggestScreen({
     setExpandedExplanation('');
   }
 
-  const quizActionTitle = draft
-    ? profile ? 'Resume profile edits' : 'Resume your style quiz'
-    : profile ? 'Edit your style profile' : 'Get to know your style';
-  const quizDescription = draft
-    ? profile
-      ? 'Your saved profile stays active until you confirm your changes.'
-      : 'Your answers are saved on this device. Pick up where you left off.'
-    : profile
-      ? 'Your style profile is saved on this device.'
-      : 'Ten thoughtful questions. A more personal FitCheck.';
-  const wardrobeDescription = wardrobeMode === 'demo'
-    ? 'Browsing clearly labeled sample pieces. Your personal closet stays separate.'
-    : `${wardrobeState?.personalItems?.length || 0} personal pieces saved on this device.`;
-
+  const openTools = () => router.push({ pathname: '/style-tools', params: { mode: wardrobeMode } });
+  const savedCount = memory.data.saved.filter((look) => look.mode === wardrobeMode).length;
+  const quizLabel = draft ? 'Continue your quiz' : profile ? 'Your style profile' : 'Find your personal style';
+  function shop(recommendation) {
+    const missing = REQUIRED_CATEGORY_LABELS.filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id)).map(({ id }) => id);
+    router.push({ pathname: '/shopping', params: {
+      occasion, category: missing[0] || 'layer', missing: missing.join(','),
+      style: profile?.answers?.q1?.styles?.[0] || '',
+    } });
+  }
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.page} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <View style={styles.topBar}>
-            <View style={styles.brandGroup}>
-              <View style={styles.brandMark}>
-                <Text style={styles.brandMarkText}>FC</Text>
-              </View>
-              <View>
-                <Text style={styles.brandName}>FITCHECK</Text>
-                <Text style={styles.brandCaption}>PERSONAL STYLE</Text>
-              </View>
-            </View>
-            <View style={styles.wardrobeLabel}>
-              <View style={styles.wardrobeDot} />
-              <Text style={styles.wardrobeText}>
-                {wardrobeMode === 'demo' ? 'DEMO MODE' : 'PERSONAL WARDROBE'}
-              </Text>
-            </View>
+          <View style={styles.header}>
+            <Text style={styles.wordmark}>fitcheck<Text style={styles.wordmarkDot}>.</Text></Text>
+            <View style={styles.modeBadge}><View style={styles.modeDot} /><Text style={styles.modeText}>{wardrobeMode === 'demo' ? 'Demo closet' : 'Your closet'}</Text></View>
           </View>
-
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nav}>
+            <View style={[styles.navItem, styles.navActive]}><Text style={styles.navActiveText}>Outfits</Text></View>
+            <NavButton label="Wardrobe" onPress={onOpenWardrobe} disabled={!wardrobeReady} />
+            <NavButton label="Avatar" onPress={onOpenAvatarStudio} disabled={!avatarReady} />
+            <NavButton label={`Saved & travel${savedCount ? ` · ${savedCount}` : ''}`} onPress={openTools} />
+          </ScrollView>
+          <View style={[styles.introRow, width >= 900 && styles.introRowWide]}>
           <View style={styles.hero}>
-            <Text style={styles.eyebrow}>THE DAILY EDIT</Text>
-            <Text style={styles.title}>
-              Style Your{'\n'}Day<Text style={styles.titlePeriod}>.</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {wardrobeMode === 'demo'
-                ? 'A fresh example, thoughtfully put together from the separate demo closet.'
-                : 'Outfit suggestions use only clothing you have personally added.'}
-            </Text>
+            <Text style={styles.eyebrow}>YOUR CLOSET. NEW POSSIBILITIES.</Text>
+            <Text accessibilityRole="header" style={[styles.title, width < 600 && styles.titleSmall]}>Good outfits. Less effort.</Text>
+            <Text style={styles.subtitle}>{wardrobeMode === 'demo' ? 'Explore looks from our sample closet. Make them yours with Know You.' : 'A fresh way to wear the pieces you already own.'}</Text>
           </View>
-
-          {storageError ? (
-            <View accessibilityRole="alert" style={styles.storageNotice}>
-              <Text style={styles.storageNoticeText}>{storageError}</Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={onRetryStorage}
-                style={styles.storageRetry}
-              >
-                <Text style={styles.storageRetryText}>Retry storage</Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityHint={storageReady ? 'Open your saved style quiz or profile' : 'Unavailable until local storage can be read'}
-            accessibilityState={{ disabled: !storageReady }}
-            disabled={!storageReady}
-            onPress={onOpenQuiz}
-            style={({ pressed }) => [
-              styles.quizCard,
-              !storageReady && styles.quizCardDisabled,
-              pressed && storageReady && styles.quizCardPressed,
-            ]}
-          >
-            <View style={styles.quizCardCopy}>
-              <Text style={styles.quizEyebrow}>
-                {profile ? 'YOUR STYLE PROFILE' : 'KNOW YOU'}
-              </Text>
-              <Text style={styles.quizTitle}>
-                {storageReady ? quizActionTitle : 'Style profile unavailable'}
-              </Text>
-              <Text style={styles.quizDescription}>
-                {storageReady ? quizDescription : 'Retry local storage to open your quiz.'}
-              </Text>
-            </View>
-            <Text style={styles.quizArrow}>→</Text>
+          <Pressable accessibilityRole="button" accessibilityState={{ disabled: !storageReady }} disabled={!storageReady} onPress={onOpenQuiz}
+            style={({ pressed }) => [styles.quizBanner, width >= 900 && styles.quizBannerWide, pressed && styles.pressed, !storageReady && styles.disabled]}>
+            <View style={styles.quizIcon}><Text style={styles.quizIconText}>✳</Text></View>
+            <View style={styles.flex}><Text style={styles.quizTitle}>{storageReady ? quizLabel : 'Style profile unavailable'}</Text><Text style={styles.quizSubtitle}>{draft ? 'Your progress is saved. Pick up where you left off.' : profile ? 'Your preferences, your priorities. Edit them anytime.' : '10 questions. Outfits that feel more like you.'}</Text></View>
+            <Text style={styles.arrow}>↗</Text>
           </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityHint="Add, edit, search, or organize clothing in Personal or Demo Mode"
-            accessibilityState={{ disabled: !wardrobeReady }}
-            disabled={!wardrobeReady}
-            onPress={onOpenWardrobe}
-            style={({ pressed }) => [
-              styles.quizCard,
-              !wardrobeReady && styles.quizCardDisabled,
-              pressed && wardrobeReady && styles.quizCardPressed,
-            ]}
-          >
-            <View style={styles.quizCardCopy}>
-              <Text style={styles.quizEyebrow}>WARDROBE · {wardrobeMode.toUpperCase()} MODE</Text>
-              <Text style={styles.quizTitle}>
-                {wardrobeReady ? 'Manage your wardrobe' : 'Wardrobe unavailable'}
-              </Text>
-              <Text style={styles.quizDescription}>
-                {wardrobeReady ? wardrobeDescription : 'Retry local storage to open your wardrobe.'}
-              </Text>
-            </View>
-            <Text style={styles.quizArrow}>→</Text>
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityHint={avatarReady
-              ? 'Open your interactive 3D avatar and customization controls'
-              : 'Unavailable until local avatar settings can be read'}
-            accessibilityState={{ disabled: !avatarReady }}
-            disabled={!avatarReady}
-            onPress={onOpenAvatarStudio}
-            style={({ pressed }) => [
-              styles.quizCard,
-              !avatarReady && styles.quizCardDisabled,
-              pressed && avatarReady && styles.quizCardPressed,
-            ]}
-          >
-            <View style={styles.quizCardCopy}>
-              <Text style={styles.quizEyebrow}>YOUR 3D AVATAR</Text>
-              <Text style={styles.quizTitle}>
-                {avatarReady ? 'Open Avatar Studio' : 'Avatar settings unavailable'}
-              </Text>
-              <Text style={styles.quizDescription}>
-                {avatarReady
-                  ? 'Customize your look, turn the model, and save changes on this device.'
-                  : avatarError || 'Retry local storage to open Avatar Studio.'}
-              </Text>
-            </View>
-            <Text style={styles.quizArrow}>→</Text>
-          </Pressable>
-
-          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/style-tools', params: { mode: wardrobeMode } })} style={styles.quizCard}>
-            <View style={styles.quizCardCopy}>
-              <Text style={styles.quizEyebrow}>SUGGEST · YOUR STYLE, OVER TIME</Text>
-              <Text style={styles.quizTitle}>Style memory, saved looks & travel</Text>
-              <Text style={styles.quizDescription}>{memory.data.enabled[wardrobeMode] ? 'Reviewed feedback is active. ' : 'Feedback stays off until you enable it. '}{memory.data.saved.filter((look) => look.mode === wardrobeMode).length} saved looks; build a travel capsule.</Text>
-            </View>
-            <Text style={styles.quizArrow}>→</Text>
-          </Pressable>
-          {memory.error ? <Text accessibilityRole="alert" style={styles.guidanceMessage}>Style memory unavailable: {memory.error}</Text> : null}
-
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionLabel}>WHAT&apos;S THE OCCASION?</Text>
-            <Text style={styles.sectionCount}>{OCCASION_INDEX[occasion]} / {String(OCCASIONS.length).padStart(2, '0')}</Text>
           </View>
-
-          <View style={styles.chipList}>
-            {OCCASIONS.map((option) => {
-              const isSelected = occasion === option;
-
-              return (
-                <Pressable
-                  key={option}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                  onPress={() => selectOccasion(option)}
-                  style={[styles.chip, isSelected && styles.chipSelected]}
-                >
-                  <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                    {option}
-                  </Text>
-                </Pressable>
-              );
+          {storageError || avatarError || !wardrobeReady ? <View accessibilityRole="alert" style={styles.notice}>
+            <Text style={styles.body}>{storageError || avatarError || 'Your wardrobe is still loading.'}</Text>
+            <Pressable accessibilityRole="button" onPress={onRetryStorage} style={styles.textButton}><Text style={styles.link}>Retry loading</Text></Pressable>
+          </View> : null}
+          {memory.error ? <Text accessibilityRole="alert" style={styles.error}>Style memory unavailable: {memory.error}</Text> : null}
+          <View style={styles.browseHeader}><Text accessibilityRole="header" style={styles.sectionTitle}>Dress for your day</Text>
+            <Pressable accessibilityRole="button" accessibilityState={{ expanded: showRefine }} onPress={() => setShowRefine(!showRefine)} style={[styles.refineButton, showRefine && styles.refineActive]}><Text style={styles.link}>{showRefine ? 'Close filters −' : `Refine${weatherCondition ? ` · ${weatherCondition}` : ''} +`}</Text></Pressable>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.occasions}>
+            {OCCASIONS.map((option) => <Pressable key={option} accessibilityRole="button" accessibilityState={{ selected: occasion === option }} onPress={() => selectOccasion(option)} style={[styles.occasion, occasion === option && styles.occasionSelected]}><Text style={[styles.occasionText, occasion === option && styles.occasionTextSelected]}>{option}</Text></Pressable>)}
+          </ScrollView>
+          {showRefine ? <View style={styles.filters}>
+            <Text style={styles.filterLabel}>Outfit variety</Text>
+            <View style={styles.wrap}>{[['familiar','Familiar'],['balanced','Balanced'],['creative','Creative']].map(([id,label]) => <Choice key={id} label={label} selected={variety === id} onPress={() => changeVariety(id)} />)}</View>
+            <Text style={styles.filterLabel}>Weather · set manually</Text>
+            <View style={styles.wrap}>{[['','Not set'],['cold','Cold'],['mild','Mild'],['hot','Hot'],['rainy','Rainy']].map(([id,label]) => <Choice key={id} label={label} selected={weatherCondition === id} onPress={() => changeWeather(id)} />)}</View>
+          </View> : null}
+          <View style={styles.resultsHeading}><Text style={styles.editDescription}>{OCCASION_NOTES[occasion]}</Text><Text style={styles.resultCount}>{result.recommendations.length} looks</Text></View>
+          {result.message ? <View style={styles.notice}>
+            <Text style={styles.quizTitle}>{result.recommendations.some((item) => !item.complete) ? 'Let’s fill in the gaps.' : 'A little more closet context.'}</Text>
+            <Text style={styles.body}>{result.message}</Text>
+            {result.unavailableCategories?.length ? <Text style={styles.body}>Unavailable: {result.unavailableCategories.map((item) => item.label).join(', ')}.</Text> : null}
+            {result.recentlyDeletedCategories?.length ? <Text style={styles.body}>Recently deleted: {result.recentlyDeletedCategories.map((item) => item.label).join(', ')}.</Text> : null}
+            <Pressable accessibilityRole="button" onPress={onOpenWardrobe} style={styles.textButton}><Text style={styles.link}>Open wardrobe →</Text></Pressable>
+          </View> : null}
+          <View style={styles.grid}>
+            {result.recommendations.map((recommendation) => {
+              const isSaved = memory.data.saved.some((look) => look.mode === wardrobeMode && look.occasion === occasion && look.items.map((item) => item.id).sort().join('|') === recommendation.signature);
+              const isOpen = openLook === recommendation.signature;
+              return <View key={recommendation.signature} style={[styles.card, { width: cardWidth }]}>
+                <View style={styles.artwork}>
+                  <OutfitArtwork items={recommendation.items} />
+                  <View style={styles.rankBadge}><Text style={styles.rankText}>{recommendation.rank === 1 ? 'THE TOP PICK' : `0${recommendation.rank} / THE EDIT`}</Text></View>
+                  <Pressable accessibilityRole="button" accessibilityLabel={isSaved ? 'Remove saved look' : 'Save this look'} accessibilityState={{ selected: isSaved, disabled: !memory.ready || memoryBusy || !recommendation.complete }} disabled={!memory.ready || memoryBusy || !recommendation.complete} onPress={() => remember(recommendation, 'save')} style={[styles.saveButton, (!memory.ready || memoryBusy || !recommendation.complete) && styles.disabled]}><Text style={[styles.saveIcon, isSaved && styles.savedIcon]}>{isSaved ? '♥' : '♡'}</Text></Pressable>
+                  <View style={styles.completeBadge}><Text style={styles.completeText}>{recommendation.complete ? 'Complete look' : 'Needs a few pieces'}{recommendation.score != null ? ` · ${recommendation.score}% match` : ''}</Text></View>
+                </View>
+                <View style={styles.cardHeader}><Text accessibilityRole="header" style={styles.lookTitle}>{LOOK_TITLES[occasion]?.[recommendation.rank - 1] || `${occasion} edit`}</Text><Text style={styles.lookNumber}>0{recommendation.rank}</Text></View>
+                <Text style={styles.pieceSummary}>{recommendation.items.map((item) => item.name).join(' · ')}</Text>
+                <View style={styles.palette}>{recommendation.items.map((item) => <View key={item.id} accessibilityLabel={item.color || 'Color unspecified'} style={[styles.swatch, { backgroundColor: item.colorHex || '#A9ADA3' }]} />)}<Text style={styles.paletteCaption}>{recommendation.items.length} pieces</Text></View>
+                <Pressable accessibilityRole="button" onPress={() => shop(recommendation)} style={({ pressed }) => [styles.primary, pressed && styles.pressed]}><Text style={styles.primaryText}>{recommendation.complete ? 'Shop alternatives' : 'Find missing pieces'}</Text><Text style={styles.primaryArrow}>↗</Text></Pressable>
+                <Pressable accessibilityRole="button" accessibilityState={{ expanded: isOpen }} onPress={() => setOpenLook(isOpen ? '' : recommendation.signature)} style={styles.detailButton}><Text style={styles.link}>{isOpen ? 'Close outfit details' : 'View pieces & give feedback'}</Text><Text style={styles.arrowSmall}>{isOpen ? '−' : '+'}</Text></Pressable>
+                {memoryNotice.signature === recommendation.signature ? <Text accessibilityLiveRegion="polite" style={styles.body}>{memoryNotice.text}</Text> : null}
+                {isOpen ? <View style={styles.details}>
+                  {recommendation.items.map((item) => <View key={item.id} style={styles.pieceRow}><View style={[styles.pieceDot, { backgroundColor: item.colorHex || '#A9ADA3' }]} /><View style={styles.flex}><Text style={styles.pieceCategory}>{item.category}</Text><Text style={styles.pieceName}>{item.name}</Text></View></View>)}
+                  {REQUIRED_CATEGORY_LABELS.filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id)).map((item) => <Text key={item.id} style={styles.body}>Missing: {item.label}</Text>)}
+                  <Text style={styles.filterLabel}>How does this feel?</Text>
+                  <View style={styles.wrap}>{[['like','Like this'],['not-style','Not my style'],['too-warm','Too warm'],['too-cold','Too cold'],['comfortable','Comfortable']].map(([id,label]) => {
+                    const disabled = !memory.ready || memoryBusy || (!weatherCondition && ['too-warm','too-cold','comfortable'].includes(id));
+                    return <Pressable key={id} accessibilityRole="button" disabled={disabled} accessibilityState={{ disabled }} onPress={() => remember(recommendation, id)} style={[styles.choice, disabled && styles.disabled]}><Text style={styles.choiceText}>{label}</Text></Pressable>;
+                  })}</View>
+                  {!weatherCondition ? <Text style={styles.body}>Choose weather in Refine to rate comfort.</Text> : null}
+                  <Pressable accessibilityRole="button" onPress={openTools} style={styles.textButton}><Text style={styles.link}>Review style memory →</Text></Pressable>
+                  {recommendation.feedbackPreference ? <Text style={styles.body}>Style feedback breaks equal-score ties; match percentages stay unchanged.</Text> : null}
+                  <Pressable accessibilityRole="button" accessibilityState={{ expanded: expandedExplanation === recommendation.signature }} onPress={() => setExpandedExplanation(expandedExplanation === recommendation.signature ? '' : recommendation.signature)} style={styles.detailButton}><Text style={styles.link}>Why this outfit?</Text><Text style={styles.arrowSmall}>{expandedExplanation === recommendation.signature ? '−' : '+'}</Text></Pressable>
+                  {expandedExplanation === recommendation.signature ? <View>
+                    {recommendation.reasons.map((reason) => <Text key={reason} style={styles.body}>{reason}</Text>)}
+                    {recommendation.factors.map((factor) => <Text key={factor.id} style={styles.body}>{factor.label}: {factor.matched}/{factor.evaluated} details · weight {factor.weight} · {Math.round(factor.ratio * 100)}%</Text>)}
+                    <Text style={styles.body}>{recommendation.score == null ? 'No match percentage until enough preference details are available.' : 'Match uses available preference details; unknown details stay neutral.'}</Text>
+                    {profile?.answers?.q4?.priorities?.length === 3 ? <Text style={styles.body}>Your three priorities use weights 6 / 3 / 1 in saved order.</Text> : null}
+                  </View> : null}
+                </View> : null}
+              </View>;
             })}
           </View>
-
-          <View style={styles.recommendationHeading}>
-            <View>
-              <Text style={styles.sectionLabel}>YOUR STYLE EDIT</Text>
-              <Text style={styles.recommendationNote}>
-                {OCCASION_NOTES[occasion]} Ranked from {result.matchingItemCount} available pieces.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.controlsCard}>
-            <Text style={styles.controlLabel}>OUTFIT VARIETY</Text>
-            <View style={styles.controlChoices}>
-              {[
-                ['familiar', 'Familiar'],
-                ['balanced', 'Balanced'],
-                ['creative', 'Creative'],
-              ].map(([id, label]) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: variety === id, selected: variety === id }}
-                  accessibilityHint={id === 'creative'
-                    ? 'Favors variety among clothing details you have entered'
-                    : id === 'familiar'
-                      ? 'Favors reusing items already shown'
-                      : 'Balances your preference score with consistent combinations'}
-                  onPress={() => changeVariety(id)}
-                  style={[styles.controlChip, variety === id && styles.controlChipSelected]}
-                >
-                  <Text style={[styles.controlChipText, variety === id && styles.controlChipTextSelected]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text style={styles.controlLabel}>MANUAL WEATHER CONTEXT · NO LIVE FORECAST</Text>
-            <View style={styles.controlChoices}>
-              {[
-                ['', 'Not set'],
-                ['cold', 'Cold'],
-                ['mild', 'Mild'],
-                ['hot', 'Hot'],
-                ['rainy', 'Rainy'],
-              ].map(([id, label]) => (
-                <Pressable
-                  key={id || 'no-weather'}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: weatherCondition === id, selected: weatherCondition === id }}
-                  onPress={() => changeWeather(id)}
-                  style={[styles.controlChip, weatherCondition === id && styles.controlChipSelected]}
-                >
-                  <Text style={[styles.controlChipText, weatherCondition === id && styles.controlChipTextSelected]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {result.message ? (
-            <View style={styles.guidanceCard}>
-              <Text style={styles.guidanceTitle}>
-                {result.recommendations.some((item) => !item.complete)
-                  ? 'A few more pieces make the outfit.'
-                  : 'A little more wardrobe context would help.'}
-              </Text>
-              <Text style={styles.guidanceMessage}>{result.message}</Text>
-              {result.unavailableCategories?.length ? (
-                <Text style={styles.guidanceDetail}>
-                  Temporarily unavailable: {result.unavailableCategories.map((item) => item.label).join(', ')}.
-                </Text>
-              ) : null}
-              {result.recentlyDeletedCategories?.length ? (
-                <Text style={styles.guidanceDetail}>
-                  Recently deleted: {result.recentlyDeletedCategories.map((item) => item.label).join(', ')}.
-                </Text>
-              ) : null}
-              {result.missingCategories?.length ? (
-                <Pressable accessibilityRole="button" onPress={onOpenWardrobe} style={styles.addMissingButton}>
-                  <Text style={styles.addMissingText}>
-                    {wardrobeMode === 'demo' ? 'Review demo wardrobe' : 'Add missing clothing'}
-                  </Text>
-                  <Text style={styles.addMissingArrow}>→</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
-
-          {result.recommendations.length > 0 ? (
-            result.recommendations.map((recommendation) => (
-              <View key={recommendation.signature || recommendation.items.map((item) => item.id).join('|')} style={styles.outfitCard}>
-                <View style={styles.featureCard}>
-                  <View style={styles.featureTopLine}>
-                    <Text style={styles.featureEyebrow}>
-                      {recommendation.rank === 1 ? 'FITCHECK PICK' : `OUTFIT ${recommendation.rank}`}
-                    </Text>
-                    <View style={styles.readyBadge}>
-                      <View style={styles.readyDot} />
-                      <Text style={styles.readyText}>
-                        {recommendation.complete ? 'COMPLETE' : 'PARTIAL'}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.featureTitleRow}>
-                    <Text style={styles.featureTitle}>{occasion}, reworked.</Text>
-                    {recommendation.score != null ? (
-                      <View accessibilityLabel={`Wardrobe match ${recommendation.score} percent`} style={styles.matchBadge}>
-                        <Text style={styles.matchScore}>{recommendation.score}%</Text>
-                        <Text style={styles.matchLabel}>MATCH</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text style={styles.featureCaption}>
-                    {recommendation.items.length} {recommendation.items.length === 1 ? 'piece' : 'pieces'}
-                    {recommendation.complete ? ', one considered look.' : ' in this partial idea.'}
-                  </Text>
-                  <View style={styles.paletteRow}>
-                    {recommendation.items.map((item) => (
-                      <View key={item.id} style={styles.paletteItem}>
-                        <View
-                          style={[
-                            styles.paletteSwatch,
-                            item.colorHex ? { backgroundColor: item.colorHex } : styles.unknownSwatch,
-                            item.colorHex === '#F4F4EF' && styles.lightSwatch,
-                          ]}
-                        />
-                        <Text style={styles.paletteLabel}>{item.category}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                <View style={styles.piecesHeader}>
-                  <Text style={styles.sectionLabel}>THE PIECES</Text>
-                  <Text style={styles.pieceCount}>{recommendation.items.length} ITEMS</Text>
-                </View>
-                <View style={styles.pieceList}>
-                  {recommendation.items.map((item, index) => (
-                    <View
-                      key={item.id}
-                      style={[
-                        styles.pieceRow,
-                        index === recommendation.items.length - 1 && styles.lastPieceRow,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.pieceSwatch,
-                          item.colorHex ? { backgroundColor: item.colorHex } : styles.unknownSwatch,
-                          item.colorHex === '#F4F4EF' && styles.lightSwatch,
-                        ]}
-                      />
-                      <View style={styles.pieceCopy}>
-                        <Text style={styles.pieceCategory}>{item.category}</Text>
-                        <Text style={styles.pieceName}>{item.name}</Text>
-                      </View>
-                      <Text style={styles.pieceColor}>{item.color || 'Color not provided'}</Text>
-                    </View>
-                  ))}
-                  {REQUIRED_CATEGORY_LABELS
-                    .filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id))
-                    .map((missing) => (
-                      <View key={missing.id} style={styles.missingPieceRow}>
-                        <View style={styles.missingPieceMark}><Text style={styles.missingPieceMarkText}>+</Text></View>
-                        <View style={styles.pieceCopy}>
-                          <Text style={styles.pieceCategory}>MISSING ESSENTIAL</Text>
-                          <Text style={styles.missingPieceName}>{missing.label}</Text>
-                        </View>
-                      </View>
-                    ))}
-                </View>
-
-                <View style={styles.reasonsCard}>
-                  <Text style={styles.sectionLabel}>MAKE THE NEXT EDIT MORE YOU</Text>
-                  <View style={styles.controlChoices}>
-                    {[['like', 'Like this'], ['not-style', 'Not my style'], ['too-warm', 'Too warm'], ['too-cold', 'Too cold'], ['comfortable', 'Comfortable']].map(([id, label]) => (
-                      <Pressable key={id} accessibilityRole="button" disabled={!memory.ready || memoryBusy || (!weatherCondition && ['too-warm', 'too-cold', 'comfortable'].includes(id))}
-                        accessibilityState={{ disabled: !memory.ready || memoryBusy || (!weatherCondition && ['too-warm', 'too-cold', 'comfortable'].includes(id)) }}
-                        onPress={() => remember(recommendation, id)} style={styles.controlChip}><Text style={styles.controlChipText}>{label}</Text></Pressable>
-                    ))}
-                  </View>
-                  {!weatherCondition ? <Text style={styles.scoreNote}>Set the weather context to record comfort feedback.</Text> : null}
-                  <Pressable accessibilityRole="button" disabled={!memory.ready || memoryBusy || !recommendation.complete} accessibilityState={{ disabled: !memory.ready || memoryBusy || !recommendation.complete }}
-                    onPress={() => remember(recommendation, 'save')} style={styles.whyButton}>
-                    <Text style={styles.whyButtonText}>{!recommendation.complete ? 'Complete the look before saving' : memory.data.saved.some((look) => look.mode === wardrobeMode && look.occasion === occasion && look.items.map((item) => item.id).sort().join('|') === recommendation.signature) ? 'Remove saved look' : 'Save this look'}</Text>
-                  </Pressable>
-                  {recommendation.feedbackPreference ? <Text style={styles.scoreNote}>Your style feedback can break equal-score ties; match percentages are unchanged.</Text> : null}
-                  {memoryNotice.signature === recommendation.signature ? <Text accessibilityLiveRegion="polite" style={styles.scoreNote}>{memoryNotice.text}</Text> : null}
-                </View>
-
-                <Pressable accessibilityRole="button" accessibilityHint="Opens shopping suggestions separate from your wardrobe"
-                  onPress={() => {
-                    const missing = ['top', 'bottom', 'shoes'].filter((id) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id));
-                    router.push({ pathname: '/shopping', params: {
-                      occasion, category: missing[0] || 'layer', missing: missing.join(','),
-                      style: profile?.answers?.q1?.styles?.[0] || '',
-                    } });
-                  }} style={styles.addMissingButton}>
-                  <Text style={styles.addMissingText}>{recommendation.complete ? 'Explore alternatives' : 'Complete this outfit'}</Text>
-                  <Text style={styles.addMissingArrow}>↗</Text>
-                </Pressable>
-
-                <View style={styles.reasonsCard}>
-                  {recommendation.reasons.map((reason) => (
-                    <View key={reason} style={styles.reasonRow}>
-                      <Text style={styles.reasonMark}>·</Text>
-                      <Text style={styles.reasonText}>{reason}</Text>
-                    </View>
-                  ))}
-                  {recommendation.score == null ? (
-                    <Text style={styles.noScoreNote}>
-                      Match score not shown until your wardrobe includes details that match your saved preferences.
-                    </Text>
-                  ) : (
-                    <Text style={styles.scoreNote}>
-                      Score normalized across available preference details only; unknown details stay neutral.
-                    </Text>
-                  )}
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: expandedExplanation === recommendation.signature }}
-                    accessibilityHint="Shows the actual factors and weights used for this match"
-                    onPress={() => setExpandedExplanation((current) =>
-                      current === recommendation.signature ? '' : recommendation.signature)}
-                    style={styles.whyButton}
-                  >
-                    <Text style={styles.whyButtonText}>
-                      {expandedExplanation === recommendation.signature ? 'Hide match details' : 'Why this outfit?'}
-                    </Text>
-                    <Text style={styles.whyButtonArrow}>
-                      {expandedExplanation === recommendation.signature ? '−' : '+'}
-                    </Text>
-                  </Pressable>
-                  {expandedExplanation === recommendation.signature ? (
-                    <View style={styles.factorList}>
-                      {recommendation.factors.length ? recommendation.factors.map((factor) => (
-                        <View key={factor.id} style={styles.factorRow}>
-                          <View style={styles.factorCopy}>
-                            <Text style={styles.factorName}>{factor.label}</Text>
-                            <Text style={styles.factorDetail}>
-                              {factor.matched} of {factor.evaluated} details · weight {factor.weight}
-                            </Text>
-                          </View>
-                          <Text style={styles.factorPercent}>{Math.round(factor.ratio * 100)}%</Text>
-                        </View>
-                      )) : (
-                        <Text style={styles.noScoreNote}>
-                          No preference factor can be evaluated with the details currently available.
-                        </Text>
-                      )}
-                      {profile?.answers?.q4?.priorities?.length === 3 ? (
-                        <Text style={styles.priorityWeights}>
-                          Your ranked priorities use weights 6 / 3 / 1 in the order saved in your profile.
-                        </Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No outfit components found.</Text>
-              <Text style={styles.emptyMessage}>{result.message}</Text>
-              <Pressable accessibilityRole="button" onPress={onOpenWardrobe} style={styles.addMissingButton}>
-                <Text style={styles.addMissingText}>Open wardrobe</Text>
-                <Text style={styles.addMissingArrow}>→</Text>
-              </Pressable>
-            </View>
-          )}
-
-          {result.recommendations.length ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !result.moreAvailable && shownSignatures.length === 0 }}
-              disabled={!result.moreAvailable && shownSignatures.length === 0}
-              onPress={generateAnotherThree}
-              style={({ pressed }) => [
-                styles.generateButton,
-                !result.moreAvailable && shownSignatures.length === 0 && styles.generateButtonDisabled,
-                pressed && result.moreAvailable && styles.generateButtonPressed,
-              ]}
-            >
-              <Text style={styles.generateButtonText}>
-                {!result.moreAvailable && shownSignatures.length ? 'Start over with these outfits' : 'Try Another 3'}
-              </Text>
-              <Text style={styles.generateButtonIcon}>↻</Text>
-            </Pressable>
-          ) : null}
-          <Text style={styles.footerNote}>
-            {wardrobeMode === 'demo'
-              ? 'BUILT ONLY FROM THE SEPARATE FITCHECK DEMO WARDROBE'
-              : 'BUILT ONLY FROM YOUR PERSONAL FITCHECK WARDROBE'}
-          </Text>
+          {!result.recommendations.length ? <View style={styles.empty}><Text style={styles.sectionTitle}>Your next great outfit starts here.</Text><Text style={styles.subtitle}>Add pieces to your wardrobe, or explore the Demo closet.</Text><Pressable accessibilityRole="button" onPress={onOpenWardrobe} style={styles.primary}><Text style={styles.primaryText}>Open wardrobe →</Text></Pressable></View> : <Pressable accessibilityRole="button" accessibilityState={{ disabled: !result.moreAvailable && !shownSignatures.length }} disabled={!result.moreAvailable && !shownSignatures.length} onPress={generateAnotherThree} style={[styles.moreButton, !result.moreAvailable && !shownSignatures.length && styles.disabled]}><Text style={styles.link}>{!result.moreAvailable && shownSignatures.length ? 'Start this edit again' : 'Discover another 3 looks'} ↻</Text></Pressable>}
+          <View style={styles.footer}><Text style={styles.footerBrand}>A little more you.</Text><Text style={styles.footerText}>{wardrobeMode === 'demo' ? 'Sample closet · Illustrated examples, not shop products' : 'Styled from your personal wardrobe'} · {result.matchingItemCount} available pieces</Text></View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const colors = {
-  background: '#F1F4EF',
-  ink: '#202B27',
-  muted: '#6C7771',
-  green: '#27483C',
-  lime: '#D4EF87',
-  line: '#E2E8E1',
-  white: '#FFFFFF',
+function NavButton({ label, onPress, disabled = false }) {
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.navItem, disabled && styles.disabled, pressed && styles.pressed]}><Text style={styles.navText}>{label}</Text></Pressable>;
+}
+function Choice({ label, selected, onPress }) {
+  return <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={onPress} style={[styles.choice, selected && styles.choiceSelected]}><Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>{label}</Text></Pressable>;
+}
+const REQUIRED_CATEGORY_LABELS = [{ id: 'top', label: 'A top' }, { id: 'bottom', label: 'Bottoms' }, { id: 'shoes', label: 'Shoes' }];
+const LOOK_TITLES = {
+  Work: ['Quiet confidence', 'The everyday uniform', 'A softer structure'],
+  'Date Night': ['After-hours ease', 'The evening edit', 'A little unexpected'],
+  Casual: ['Off-duty, on point', 'The easy rotation', 'Everyday, elevated'],
+  Formal: ['An elevated entrance', 'The considered look', 'Clean & composed'],
+  Gym: ['Find your rhythm', 'Ready to move', 'The active edit'],
+  Concert: ['Setlist ready', 'Out for the night', 'Your encore look'],
+  Travel: ['The departure edit', 'Go somewhere good', 'An easy arrival'],
+  Sleepwear: ['Slow down', 'The soft landing', 'Stay a little longer'],
 };
-
-const REQUIRED_CATEGORY_LABELS = [
-  { id: 'top', label: 'A top' },
-  { id: 'bottom', label: 'Bottoms' },
-  { id: 'shoes', label: 'Shoes' },
-];
-
+const ink = '#203C32';
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1, paddingBottom: 28 },
-  content: {
-    width: '100%',
-    maxWidth: 560,
-    alignSelf: 'center',
-    paddingHorizontal: 22,
-  },
-  topBar: {
-    minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#DCE3DC',
-  },
-  brandGroup: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  brandMark: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: colors.green,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandMarkText: { color: colors.lime, fontSize: 12, fontWeight: '800' },
-  brandName: { color: colors.ink, fontSize: 12, fontWeight: '800', letterSpacing: 1.1 },
-  brandCaption: { marginTop: 3, color: colors.muted, fontSize: 9, fontWeight: '600', letterSpacing: 1.1 },
-  wardrobeLabel: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  wardrobeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#7E9A68' },
-  wardrobeText: { color: colors.muted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
-  hero: { paddingTop: 28, paddingBottom: 26 },
-  eyebrow: { color: '#627A68', fontSize: 10, fontWeight: '800', letterSpacing: 1.6 },
-  title: {
-    marginTop: 9,
-    color: colors.ink,
-    fontFamily: 'serif',
-    fontSize: 42,
-    lineHeight: 46,
-    fontWeight: '600',
-  },
-  titlePeriod: { color: '#D8755D' },
-  subtitle: { maxWidth: 330, marginTop: 10, color: colors.muted, fontSize: 14, lineHeight: 21 },
-  controlsCard: {
-    gap: 9,
-    marginBottom: 14,
-    padding: 13,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 8,
-    backgroundColor: colors.white,
-  },
-  controlLabel: { marginTop: 2, color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-  controlChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  controlChip: {
-    minHeight: 42,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 20,
-    backgroundColor: '#FAFBF8',
-  },
-  controlChipSelected: { borderColor: colors.green, backgroundColor: colors.green },
-  controlChipText: { color: colors.ink, fontSize: 10, fontWeight: '700' },
-  controlChipTextSelected: { color: colors.white },
-  quizCard: {
-    minHeight: 88,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderWidth: 1,
-    borderColor: '#D9E1D9',
-    borderRadius: 8,
-    backgroundColor: '#FAFBF8',
-  },
-  quizCardDisabled: { opacity: 0.65 },
-  quizCardPressed: { opacity: 0.78 },
-  quizCardCopy: { flex: 1 },
-  quizEyebrow: { color: '#627A68', fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
-  quizTitle: { marginTop: 5, color: colors.ink, fontSize: 14, fontWeight: '800' },
-  quizDescription: { marginTop: 4, color: colors.muted, fontSize: 11, lineHeight: 16 },
-  quizArrow: { color: colors.green, fontSize: 23, fontWeight: '600' },
-  storageNotice: { marginBottom: 12, padding: 12, borderRadius: 8, backgroundColor: '#F9E8E4' },
-  storageNoticeText: { color: '#9B3F35', fontSize: 12, lineHeight: 17 },
-  storageRetry: { minHeight: 42, justifyContent: 'center', marginTop: 3 },
-  storageRetryText: { color: '#7C302A', fontSize: 12, fontWeight: '800' },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 11,
-  },
-  sectionLabel: { color: colors.ink, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  sectionCount: { color: colors.muted, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
-  chipList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 26 },
-  chip: {
-    minHeight: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 15,
-    borderWidth: 1,
-    borderColor: '#D9E1D9',
-    borderRadius: 20,
-    backgroundColor: '#FAFBF8',
-  },
-  chipSelected: { borderColor: colors.green, backgroundColor: colors.green },
-  chipText: { color: colors.ink, fontSize: 12, fontWeight: '600' },
-  chipTextSelected: { color: colors.white },
-  recommendationHeading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 12,
-  },
-  recommendationNote: { maxWidth: 300, marginTop: 5, color: colors.muted, fontSize: 12, lineHeight: 17 },
-  featureCard: { padding: 18, borderRadius: 8, backgroundColor: colors.green },
-  outfitCard: { marginBottom: 20 },
-  featureTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  matchBadge: { minWidth: 55, alignItems: 'center', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 7, backgroundColor: 'rgba(255,255,255,0.14)' },
-  matchScore: { color: colors.white, fontSize: 14, fontWeight: '800' },
-  matchLabel: { marginTop: 2, color: '#D3DED5', fontSize: 7, fontWeight: '800', letterSpacing: 0.8 },
-  featureTopLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  featureEyebrow: { color: '#D9E7D4', fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
-  readyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  readyDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.lime },
-  readyText: { color: colors.white, fontSize: 8, fontWeight: '700', letterSpacing: 0.6 },
-  featureTitle: { marginTop: 20, color: colors.white, fontFamily: 'serif', fontSize: 27, lineHeight: 32, fontWeight: '600' },
-  featureCaption: { marginTop: 4, color: '#D3DED5', fontSize: 12 },
-  paletteRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 20 },
-  paletteItem: {
-    minWidth: 68,
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 9,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.09)',
-  },
-  paletteSwatch: { width: 31, height: 18, borderRadius: 5 },
-  unknownSwatch: { backgroundColor: '#6F7F75' },
-  lightSwatch: { borderWidth: 1, borderColor: '#D6D8D0' },
-  paletteLabel: { color: '#E5ECE3', fontSize: 9, fontWeight: '600', textTransform: 'uppercase' },
-  piecesHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 23, marginBottom: 8 },
-  pieceCount: { color: colors.muted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
-  pieceList: { paddingHorizontal: 13, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: colors.white },
-  pieceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: 1, borderBottomColor: '#EEF1EC' },
-  lastPieceRow: { borderBottomWidth: 0 },
-  pieceSwatch: { width: 40, height: 40, borderRadius: 7 },
-  pieceCopy: { flex: 1, minWidth: 0 },
-  pieceCategory: { color: '#778179', fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
-  pieceName: { marginTop: 4, color: colors.ink, fontSize: 13, fontWeight: '700' },
-  pieceColor: { maxWidth: 76, color: colors.muted, fontSize: 11, textAlign: 'right' },
-  missingPieceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: 1, borderBottomColor: '#EEF1EC' },
-  missingPieceMark: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#C7CEC8', borderStyle: 'dashed', borderRadius: 7 },
-  missingPieceMarkText: { color: colors.muted, fontSize: 20, fontWeight: '500' },
-  missingPieceName: { marginTop: 4, color: colors.muted, fontSize: 13, fontWeight: '700' },
-  reasonsCard: { marginTop: 10, paddingHorizontal: 13, paddingVertical: 8, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: colors.white },
-  reasonRow: { flexDirection: 'row', gap: 7, paddingVertical: 5 },
-  reasonMark: { color: '#627A68', fontSize: 18, lineHeight: 17, fontWeight: '800' },
-  reasonText: { flex: 1, color: colors.ink, fontSize: 11, lineHeight: 16 },
-  scoreNote: { marginTop: 6, color: colors.muted, fontSize: 9, lineHeight: 13 },
-  noScoreNote: { marginTop: 6, color: colors.muted, fontSize: 10, lineHeight: 15 },
-  whyButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#EEF1EC', marginTop: 8 },
-  whyButtonText: { color: colors.green, fontSize: 11, fontWeight: '800' },
-  whyButtonArrow: { color: colors.green, fontSize: 19, fontWeight: '700' },
-  factorList: { paddingBottom: 7 },
-  factorRow: { minHeight: 47, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: 1, borderBottomColor: '#EEF1EC' },
-  factorCopy: { flex: 1 },
-  factorName: { color: colors.ink, fontSize: 11, fontWeight: '700' },
-  factorDetail: { marginTop: 3, color: colors.muted, fontSize: 9 },
-  factorPercent: { color: colors.green, fontSize: 12, fontWeight: '800' },
-  priorityWeights: { marginTop: 8, color: colors.muted, fontSize: 9, lineHeight: 13 },
-  guidanceCard: { marginBottom: 14, padding: 15, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: '#FAFBF8' },
-  guidanceTitle: { color: colors.ink, fontSize: 14, fontWeight: '800' },
-  guidanceMessage: { marginTop: 5, color: colors.muted, fontSize: 11, lineHeight: 16 },
-  guidanceDetail: { marginTop: 5, color: '#80534A', fontSize: 10, lineHeight: 15 },
-  addMissingButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 5, paddingHorizontal: 10, borderRadius: 7, backgroundColor: '#E7EEE4' },
-  addMissingText: { color: colors.green, fontSize: 11, fontWeight: '800' },
-  addMissingArrow: { color: colors.green, fontSize: 17, fontWeight: '700' },
-  emptyState: { padding: 20, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: colors.white },
-  emptyTitle: { color: colors.ink, fontSize: 16, fontWeight: '700' },
-  emptyMessage: { marginTop: 7, color: colors.muted, fontSize: 13, lineHeight: 19 },
-  inlineMessage: { marginTop: 10, color: colors.muted, fontSize: 12, lineHeight: 18 },
-  generateButton: {
-    minHeight: 54,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 19,
-    paddingHorizontal: 17,
-    borderRadius: 8,
-    backgroundColor: colors.lime,
-  },
-  generateButtonDisabled: { opacity: 0.55 },
-  generateButtonPressed: { opacity: 0.78 },
-  generateButtonText: { color: colors.ink, fontSize: 14, fontWeight: '800' },
-  generateButtonIcon: { color: colors.green, fontSize: 23, fontWeight: '500' },
-  footerNote: { marginTop: 13, color: '#7D8980', fontSize: 8, fontWeight: '700', letterSpacing: 1, textAlign: 'center' },
+  page: { flex: 1, backgroundColor: '#FAF9F6' },
+  scrollContent: { flexGrow: 1, paddingBottom: 30 },
+  content: { width: '100%', maxWidth: 1240, alignSelf: 'center', paddingHorizontal: 20 },
+  header: { minHeight: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  wordmark: { color: ink, fontSize: 34, fontWeight: '700', letterSpacing: -2 },
+  wordmarkDot: { color: '#8D9C69' },
+  modeBadge: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  modeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#577346' },
+  modeText: { color: '#5D675E', fontSize: 12 },
+  nav: { gap: 16, borderBottomWidth: 1, borderColor: '#DCDDD4', minWidth: '100%' },
+  navItem: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 2, borderBottomWidth: 2, borderColor: 'transparent' },
+  navActive: { borderColor: ink },
+  navActiveText: { fontSize: 13, color: ink, fontWeight: '700' },
+  navText: { fontSize: 13, color: '#596059' },
+  introRow: { marginBottom: 22 },
+  introRowWide: { flexDirection: 'row', alignItems: 'center', gap: 30 },
+  hero: { flex: 1, paddingTop: 26, paddingBottom: 22 },
+  eyebrow: { fontSize: 10, letterSpacing: 2, color: '#5C6F58', fontWeight: '600' },
+  title: { marginTop: 12, fontFamily: 'serif', fontSize: 46, lineHeight: 55, letterSpacing: -1.8, color: ink },
+  titleSmall: { fontSize: 39, lineHeight: 46, letterSpacing: -1 },
+  subtitle: { marginTop: 10, color: '#61675F', fontSize: 14, lineHeight: 22, maxWidth: 590 },
+  quizBanner: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 17, backgroundColor: '#E8EDDF', borderRadius: 3 },
+  quizBannerWide: { width: 320, marginTop: 12 },
+  quizIcon: { width: 40, height: 40, backgroundColor: '#D9E2CB', borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  quizIconText: { fontSize: 29, color: ink },
+  flex: { flex: 1, minWidth: 0 },
+  quizTitle: { fontSize: 14, fontWeight: '600', color: ink },
+  quizSubtitle: { fontSize: 12, color: '#55634F', marginTop: 4, lineHeight: 18 },
+  arrow: { fontSize: 24, color: ink },
+  browseHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 },
+  sectionTitle: { flex: 1, fontSize: 22, color: ink, fontFamily: 'serif' },
+  refineButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: '#D9DCD1', borderRadius: 3 },
+  refineActive: { backgroundColor: '#E8EDDF' },
+  occasions: { flexDirection: 'row', gap: 8, paddingBottom: 8 },
+  occasion: { minHeight: 44, paddingHorizontal: 18, justifyContent: 'center', borderWidth: 1, borderColor: '#D9DCD1', borderRadius: 24 },
+  occasionSelected: { backgroundColor: ink, borderColor: ink },
+  occasionText: { color: '#505C50', fontSize: 13 },
+  occasionTextSelected: { color: '#FFFFFF', fontWeight: '600' },
+  resultsHeading: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginVertical: 16 },
+  editDescription: { flex: 1, color: '#666C62', fontSize: 12, lineHeight: 18 },
+  resultCount: { color: '#666C62', fontSize: 12, lineHeight: 18 },
+  filters: { backgroundColor: '#F0F1E9', padding: 16, marginTop: 12, gap: 10 },
+  filterLabel: { color: ink, fontSize: 12, fontWeight: '600', marginTop: 8 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  choice: { minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', borderWidth: 1, borderColor: '#D7DBD0', borderRadius: 3, backgroundColor: '#FAF9F6' },
+  choiceSelected: { backgroundColor: ink, borderColor: ink },
+  choiceText: { color: ink, fontSize: 12 },
+  choiceTextSelected: { color: '#FFFFFF' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 20 },
+  card: { minWidth: 0, paddingBottom: 20 },
+  artwork: { position: 'relative', borderRadius: 3, overflow: 'hidden' },
+  rankBadge: { position: 'absolute', top: 16, left: 14, backgroundColor: '#FAF9F6', paddingHorizontal: 9, paddingVertical: 7 },
+  rankText: { fontSize: 9, color: ink, letterSpacing: 1, fontWeight: '700' },
+  saveButton: { position: 'absolute', top: 8, right: 8, width: 44, height: 44, backgroundColor: '#FAF9F6', borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
+  saveIcon: { fontSize: 27, color: ink },
+  savedIcon: { fontSize: 23 },
+  completeBadge: { position: 'absolute', bottom: 34, right: 12, backgroundColor: '#FAF9F6', paddingHorizontal: 9, paddingVertical: 6, maxWidth: '85%' },
+  completeText: { color: ink, fontSize: 10 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
+  lookTitle: { flex: 1, color: ink, fontFamily: 'serif', fontSize: 23 },
+  lookNumber: { fontSize: 11, color: '#6A7364' },
+  pieceSummary: { color: '#62695F', fontSize: 12, lineHeight: 19, marginTop: 7, minHeight: 38 },
+  palette: { flexDirection: 'row', gap: 5, alignItems: 'center', marginTop: 12, marginBottom: 16 },
+  swatch: { width: 13, height: 13, borderRadius: 7, borderWidth: 1, borderColor: '#00000012' },
+  paletteCaption: { marginLeft: 5, fontSize: 11, color: '#65705F' },
+  primary: { minHeight: 48, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, backgroundColor: ink, borderRadius: 3 },
+  primaryText: { flexShrink: 1, color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  primaryArrow: { color: '#FFFFFF', fontSize: 20 },
+  detailButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottomWidth: 1, borderColor: '#DDE0D5', paddingVertical: 8 },
+  link: { fontSize: 12, color: ink, fontWeight: '600', flexShrink: 1 },
+  arrowSmall: { fontSize: 20, color: ink },
+  details: { paddingTop: 10, gap: 10 },
+  pieceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 54, borderBottomWidth: 1, borderColor: '#E6E7DF' },
+  pieceDot: { width: 28, height: 34, borderRadius: 3, borderWidth: 1, borderColor: '#00000012' },
+  pieceCategory: { fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: '#6A7364' },
+  pieceName: { color: ink, fontSize: 13, marginTop: 4 },
+  body: { color: '#596352', fontSize: 12, lineHeight: 19, marginTop: 4 },
+  textButton: { minHeight: 44, justifyContent: 'center' },
+  notice: { backgroundColor: '#EDF0E4', padding: 16, gap: 5, marginBottom: 16 },
+  error: { color: '#8A392C', fontSize: 13, marginBottom: 12 },
+  empty: { paddingVertical: 36, gap: 16 },
+  moreButton: { minHeight: 50, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: 20, borderWidth: 1, borderColor: '#C2CCB7', borderRadius: 3, paddingHorizontal: 26, paddingVertical: 12 },
+  footer: { borderTopWidth: 1, borderColor: '#DDE0D5', marginTop: 44, paddingTop: 28, paddingBottom: 12, gap: 8 },
+  footerBrand: { fontFamily: 'serif', fontSize: 24, color: ink },
+  footerText: { fontSize: 10, color: '#63705D', lineHeight: 17 },
+  pressed: { opacity: 0.75 },
+  disabled: { opacity: 0.4 },
 });

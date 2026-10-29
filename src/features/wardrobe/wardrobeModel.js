@@ -1,7 +1,7 @@
 const WARDROBE_SCHEMA_VERSION = 1;
 const RECOVERY_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 const WARDROBE_CATEGORIES = ['top', 'bottom', 'shoes', 'layer', 'accessory'];
-const OCCASIONS = ['Work', 'Date Night', 'Casual', 'Formal', 'Gym'];
+const { OCCASIONS } = require('../suggest/occasions');
 
 function createEmptyWardrobeState() {
   return {

@@ -46,9 +46,15 @@ function getWeatherPreferences(profile, condition) {
  * @param {{category: string, warmth?: string, coverage?: string, waterproof?: boolean}[]} items
  * @param {WeatherProfile | null} profile
  * @param {string} condition
+ * @param {{warmth: string | null, source: string} | null} override
  */
-function scorePersonalWeather(items, profile, condition) {
-  const preferences = getWeatherPreferences(profile, condition);
+function scorePersonalWeather(items, profile, condition, override = null) {
+  let preferences = getWeatherPreferences(profile, condition);
+  const learnedWarmth = override?.warmth;
+  if (override && (learnedWarmth === 'Light' || learnedWarmth === 'Warm')) {
+    preferences = preferences.filter((preference) => preference.field !== 'warmth');
+    preferences.push({ field: 'warmth', value: learnedWarmth, source: override.source });
+  }
   const dimensions = [...new Set(preferences.map(({ field }) => field))];
   const evidence = dimensions.flatMap((field) => {
     const choices = preferences.filter((preference) => preference.field === field);

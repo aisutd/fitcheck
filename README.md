@@ -119,3 +119,12 @@ for the hosted service; unavailable live data is clearly labeled. See
 category-pair baseline on the original dataset. Its measured ROC-AUC is 0.735029
 on 7,061 evaluable compatibility examples. This is neither app accuracy nor a
 personalized match score; see `docs/POLYVORE-EVALUATION.md` for method and limitations.
+
+## Standalone Suggest / Know You tools
+
+Style memory records local outfit feedback with explicit per-mode enablement;
+saved looks preserve references to complete outfits; travel capsules plan up to
+five days from available wardrobe pieces. Concert, Travel and Sleepwear are new
+explicitly tagged occasions, with footwear optional for Sleepwear. No teammate
+services or account are required. See `docs/STANDALONE-SUGGEST.md` for limits,
+learning behavior, storage, and verification. `npm test` includes the new checks.

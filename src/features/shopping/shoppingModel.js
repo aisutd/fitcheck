@@ -1,6 +1,6 @@
 const { QUIZ_SHOPPING } = require('../quiz/carouselModel');
 const SHOP_CATEGORIES = { top: 'Top', bottom: 'Bottom', shoes: 'Shoes', layer: 'Layer', accessory: 'Accessory' };
-const OCCASIONS = ['Work', 'Date Night', 'Casual', 'Formal', 'Gym'];
+const { OCCASIONS } = require('../suggest/occasions');
 function validateSearch(input) {
   if (!input || !OCCASIONS.includes(input.occasion) || !Object.prototype.hasOwnProperty.call(SHOP_CATEGORIES, input.category)) {
     throw new Error('Choose a valid occasion and clothing category.');

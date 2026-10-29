@@ -1,3 +1,5 @@
+import { useStyleMemory, updateStyleMemory } from '../features/suggest/styleMemoryStore';
+import { recordFeedback, toggleSavedLook } from '../features/suggest/styleMemoryModel';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
@@ -19,15 +21,12 @@ const OCCASION_NOTES = {
   Casual: 'Easy pieces with a point of view.',
   Formal: 'Clean lines for a more elevated moment.',
   Gym: 'Made to move, from warm-up to cool-down.',
+  Concert: 'Pieces you have tagged for your next live show.',
+  Travel: 'An easy outfit for the journey.',
+  Sleepwear: 'Your sleepwear pieces, with footwear optional.',
 };
 
-const OCCASION_INDEX = {
-  Work: '01',
-  'Date Night': '02',
-  Casual: '03',
-  Formal: '04',
-  Gym: '05',
-};
+const OCCASION_INDEX = Object.fromEntries(OCCASIONS.map((item, index) => [item, String(index + 1).padStart(2, '0')]));
 
 export default function SuggestScreen({
   profile = null,
@@ -44,6 +43,9 @@ export default function SuggestScreen({
   onRetryStorage = () => {},
 }) {
   const wardrobeMode = wardrobeState?.mode || 'personal';
+  const memory = useStyleMemory();
+  const [memoryBusy, setMemoryBusy] = useState(false);
+  const [memoryNotice, setMemoryNotice] = useState({ signature: '', text: '' });
   const activeWardrobe = useMemo(
     () => wardrobeState
       ? getActiveWardrobeItems(wardrobeState, WARDROBE)
@@ -78,9 +80,22 @@ export default function SuggestScreen({
       previousSignatures: shownSignatures,
       fullWardrobe,
       recentlyDeleted: wardrobeState?.recentlyDeleted || [],
+      memory: memory.data, mode: wardrobeMode,
     }),
-    [occasion, activeWardrobe, profile, variety, weatherCondition, shownSignatures, fullWardrobe, wardrobeState],
+    [occasion, activeWardrobe, profile, variety, weatherCondition, shownSignatures, fullWardrobe, wardrobeState, memory.data, wardrobeMode],
   );
+
+  async function remember(recommendation, kind) {
+    setMemoryBusy(true);
+    const context = { mode: wardrobeMode, occasion, weather: weatherCondition, signature: recommendation.signature };
+    try {
+      await updateStyleMemory((state) => kind === 'save'
+        ? toggleSavedLook(state, context, recommendation.items)
+        : recordFeedback(state, context, kind));
+      setMemoryNotice({ signature: recommendation.signature, text: kind === 'save' ? 'Saved looks updated on this device.' : 'Feedback saved. Review and enable learning in Style memory.' });
+    } catch (error) { setMemoryNotice({ signature: recommendation.signature, text: error.message }); }
+    finally { setMemoryBusy(false); }
+  }
 
   function selectOccasion(nextOccasion) {
     setOccasion(nextOccasion);
@@ -251,9 +266,19 @@ export default function SuggestScreen({
             <Text style={styles.quizArrow}>→</Text>
           </Pressable>
 
+          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/style-tools', params: { mode: wardrobeMode } })} style={styles.quizCard}>
+            <View style={styles.quizCardCopy}>
+              <Text style={styles.quizEyebrow}>SUGGEST · YOUR STYLE, OVER TIME</Text>
+              <Text style={styles.quizTitle}>Style memory, saved looks & travel</Text>
+              <Text style={styles.quizDescription}>{memory.data.enabled[wardrobeMode] ? 'Reviewed feedback is active. ' : 'Feedback stays off until you enable it. '}{memory.data.saved.filter((look) => look.mode === wardrobeMode).length} saved looks; build a travel capsule.</Text>
+            </View>
+            <Text style={styles.quizArrow}>→</Text>
+          </Pressable>
+          {memory.error ? <Text accessibilityRole="alert" style={styles.guidanceMessage}>Style memory unavailable: {memory.error}</Text> : null}
+
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>WHAT&apos;S THE OCCASION?</Text>
-            <Text style={styles.sectionCount}>{OCCASION_INDEX[occasion]} / 05</Text>
+            <Text style={styles.sectionCount}>{OCCASION_INDEX[occasion]} / {String(OCCASIONS.length).padStart(2, '0')}</Text>
           </View>
 
           <View style={styles.chipList}>
@@ -436,7 +461,7 @@ export default function SuggestScreen({
                     </View>
                   ))}
                   {REQUIRED_CATEGORY_LABELS
-                    .filter(({ id }) => !recommendation.items.some((item) => item.category === id))
+                    .filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id))
                     .map((missing) => (
                       <View key={missing.id} style={styles.missingPieceRow}>
                         <View style={styles.missingPieceMark}><Text style={styles.missingPieceMarkText}>+</Text></View>
@@ -448,9 +473,27 @@ export default function SuggestScreen({
                     ))}
                 </View>
 
+                <View style={styles.reasonsCard}>
+                  <Text style={styles.sectionLabel}>MAKE THE NEXT EDIT MORE YOU</Text>
+                  <View style={styles.controlChoices}>
+                    {[['like', 'Like this'], ['not-style', 'Not my style'], ['too-warm', 'Too warm'], ['too-cold', 'Too cold'], ['comfortable', 'Comfortable']].map(([id, label]) => (
+                      <Pressable key={id} accessibilityRole="button" disabled={!memory.ready || memoryBusy || (!weatherCondition && ['too-warm', 'too-cold', 'comfortable'].includes(id))}
+                        accessibilityState={{ disabled: !memory.ready || memoryBusy || (!weatherCondition && ['too-warm', 'too-cold', 'comfortable'].includes(id)) }}
+                        onPress={() => remember(recommendation, id)} style={styles.controlChip}><Text style={styles.controlChipText}>{label}</Text></Pressable>
+                    ))}
+                  </View>
+                  {!weatherCondition ? <Text style={styles.scoreNote}>Set the weather context to record comfort feedback.</Text> : null}
+                  <Pressable accessibilityRole="button" disabled={!memory.ready || memoryBusy || !recommendation.complete} accessibilityState={{ disabled: !memory.ready || memoryBusy || !recommendation.complete }}
+                    onPress={() => remember(recommendation, 'save')} style={styles.whyButton}>
+                    <Text style={styles.whyButtonText}>{!recommendation.complete ? 'Complete the look before saving' : memory.data.saved.some((look) => look.mode === wardrobeMode && look.occasion === occasion && look.items.map((item) => item.id).sort().join('|') === recommendation.signature) ? 'Remove saved look' : 'Save this look'}</Text>
+                  </Pressable>
+                  {recommendation.feedbackPreference ? <Text style={styles.scoreNote}>Your style feedback can break equal-score ties; match percentages are unchanged.</Text> : null}
+                  {memoryNotice.signature === recommendation.signature ? <Text accessibilityLiveRegion="polite" style={styles.scoreNote}>{memoryNotice.text}</Text> : null}
+                </View>
+
                 <Pressable accessibilityRole="button" accessibilityHint="Opens shopping suggestions separate from your wardrobe"
                   onPress={() => {
-                    const missing = ['top', 'bottom', 'shoes'].filter((id) => !recommendation.items.some((item) => item.category === id));
+                    const missing = ['top', 'bottom', 'shoes'].filter((id) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id));
                     router.push({ pathname: '/shopping', params: {
                       occasion, category: missing[0] || 'layer', missing: missing.join(','),
                       style: profile?.answers?.q1?.styles?.[0] || '',

@@ -11,7 +11,7 @@ model or an LLM call. AI_PROMPT.md is a reference prompt, not the active backend
 | Ten-question Know You quiz | Implemented, with drafts, review/edit and explicit save confirmation |
 | Ranked top-three priorities | Implemented with saved-order weights 6/3/1 |
 | Personal weather exceptions in Date Night | Implemented for supported answers and explicit garment metadata |
-| Repeat observations to learn preference frequency | Not implemented; current evidence is individual quiz answers |
+| Repeat observations to learn preference frequency | Local context-specific feedback heuristic implemented, off until explicitly enabled; not a trained model |
 | Live avatar while answering | Implemented for cold/hot/rain outfit choices, using illustrative geometry |
 | Circular clothing carousel | Arc carousel implemented; manual browsing plus explicit answer selection |
 | Real shopping products in quiz carousel | Choice-specific loader implemented; live access remains unconfigured and unverified |
@@ -23,7 +23,7 @@ model or an LLM call. AI_PROMPT.md is a reference prompt, not the active backend
 | Live Google Shopping results | Pending reachable hosting and private SerpApi key; no live request verified |
 | Polyvore compatibility evaluation | Offline category baseline measured; runtime personalization and human evaluation remain separate |
 | Skin-tone palette guidance | Not implemented; avatar tone is user-selected and does not infer race |
-| Travel, sleepwear, concerts and social inspiration | Ideas discussed; no corresponding features implemented |
+| Travel, sleepwear, concerts and social inspiration | Local travel planner and three new occasions implemented; social-media input remains outside this increment |
 | iOS/Android | Platform bundles built; native runtime interaction verification remains pending |
 
 ## Changes in this checkpoint
@@ -42,7 +42,7 @@ model or an LLM call. AI_PROMPT.md is a reference prompt, not the active backend
 
 ## Reproducible validation
 
-Recorded for this checkpoint: all 12 logic suites pass; lint reports no errors
+Recorded for this checkpoint: all 14 logic suites pass; lint reports no errors
 or warnings; scoped JavaScript model checking passes; iOS, Android and web
 bundles export successfully. Three.js scene properties are excluded from the
 DOM-only unknown-property lint rule in the three scene-rendering files.
@@ -111,3 +111,5 @@ return navigation, large text, screen-reader labels and shopping network states 
 both platforms. Physical-device 3D verification remains necessary afterward.
 
 Later update: see docs/CAROUSEL.md and docs/POLYVORE-EVALUATION.md for the carousel and real-data baseline. Simulator troubleshooting remains deferred; hosting/key ownership remains unconfirmed.
+
+Standalone Suggest update: see docs/STANDALONE-SUGGEST.md for local style memory, saved looks, travel capsules and new occasion contexts. No teammate branches were merged.

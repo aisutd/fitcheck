@@ -1,3 +1,4 @@
+import { importLegacyCollections } from './legacyCollections';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -32,7 +33,9 @@ function removeInternalPhoto(uri) {
 export async function loadWardrobeState() {
   const raw = await AsyncStorage.getItem(WARDROBE_KEY);
   if (raw === null) {
-    return { state: createEmptyWardrobeState(), cleanupWarning: '' };
+    const state = await importLegacyCollections(createEmptyWardrobeState());
+    if (state.personalItems.length || state.wishlistItems.length) await saveWardrobeState(state);
+    return { state, cleanupWarning: '' };
   }
 
   let state;
@@ -104,6 +107,7 @@ export function deleteWardrobePhoto(uri) {
 
 export function wardrobePhotoExists(uri) {
   if (!uri) return false;
+  if (/^(https?:\/\/|public-photo:|data:image\/)/.test(uri)) return true;
   try {
     return new File(uri).exists;
   } catch {

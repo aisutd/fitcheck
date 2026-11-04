@@ -1,7 +1,11 @@
+import { itemImageSource, resolveImageUri } from '../features/collections/photoSource';
+import { router, useLocalSearchParams } from 'expo-router';
+import { processPhoto, importPhotoUrl } from '../features/recognition/photoService';
+import { applyRecognition } from '../features/recognition/recognitionAdapter';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -35,6 +39,7 @@ import {
 
 const CATEGORY_LABELS = {
   all: 'All pieces',
+  onepiece: 'Dresses & suits',
   top: 'Tops',
   bottom: 'Bottoms',
   shoes: 'Shoes',
@@ -51,11 +56,11 @@ const WEATHER_TAGS = [
   { id: 'rainy', label: 'Rainy' },
 ];
 const COLORS = {
-  background: '#F1F4EF',
+  background: '#FAF9F6',
   ink: '#202B27',
   muted: '#6C7771',
   green: '#27483C',
-  lime: '#D4EF87',
+  lime: '#E8EDDF',
   line: '#DCE3DC',
   white: '#FFFFFF',
   error: '#9B3F35',
@@ -125,7 +130,7 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
         {item.photoUri && !photoMissing ? (
           <Image
             accessibilityLabel={`${item.name} clothing photo`}
-            source={{ uri: item.photoUri }}
+            source={itemImageSource(item.photoUri)}
             style={styles.itemImage}
             resizeMode="cover"
             onError={onEdit.markPhotoMissing}
@@ -161,6 +166,8 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
           {mode === 'personal' ? (
             <>
               <ActionButton title="Edit" secondary onPress={onEdit.open} />
+              {item.photoUri ? <ActionButton title="Try on" secondary onPress={() => router.push({ pathname: '/try-on', params: { items: item.id } })} /> : null}
+              {item.photoUri ? <ActionButton title="Analyze photo" secondary onPress={() => router.push({ pathname: '/analysis', params: { items: item.id } })} /> : null}
               <ActionButton title="Delete" secondary onPress={onDelete} />
             </>
           ) : null}
@@ -176,6 +183,7 @@ export default function WardrobeScreen({
   onWardrobeChange,
   onClose,
 }) {
+  const { item: initialItem } = useLocalSearchParams();
   const { mode } = wardrobeState;
   const demoItems = DEMO_ITEMS.map((item) => ({
     ...item,
@@ -193,11 +201,19 @@ export default function WardrobeScreen({
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState(null);
   const [photoDraftUri, setPhotoDraftUri] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [photoChanged, setPhotoChanged] = useState(false);
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [missingPhotos, setMissingPhotos] = useState([]);
   const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const item = wardrobeState.personalItems.find((entry) => entry.id === initialItem);
+    if (item) openEditItem(item);
+    // Apply deep-link selection once; edits remain in the review form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialItem]);
 
   const visibleItems = view === 'deleted'
     ? wardrobeState.recentlyDeleted
@@ -253,7 +269,7 @@ export default function WardrobeScreen({
       occasions: item.occasions || [],
       waterproof: item.waterproof === true,
     });
-    setPhotoDraftUri(item.photoUri || '');
+    setPhotoDraftUri(resolveImageUri(item.photoUri) || '');
     setPhotoChanged(false);
     setFormError('');
     setView('edit');
@@ -302,6 +318,28 @@ export default function WardrobeScreen({
     } catch (error) {
       setFormError(`The clothing photo could not be opened: ${error.message}`);
     }
+  }
+
+  async function recognizePhoto() {
+    if (!photoDraftUri || busy) return;
+    setBusy(true); setFormError('');
+    try {
+      const { url, tags } = await processPhoto({ uri: photoDraftUri, fileName: 'clothing.jpg', mimeType: 'image/jpeg' });
+      if (!tags) throw new Error('Photo uploaded, but automatic recognition is unavailable. You can still enter details manually.');
+      setForm((current) => ({ ...applyRecognition(current, tags), recognitionPhotoUrl: url }));
+    } catch (error) { setFormError(error.message); }
+    finally { setBusy(false); }
+  }
+  async function importUrl() {
+    if (busy || !photoUrl.trim()) return;
+    setBusy(true); setFormError('');
+    try {
+      const result = await importPhotoUrl(photoUrl);
+      setPhotoDraftUri(result.url); setPhotoChanged(true);
+      setForm((current) => ({ ...(result.tags ? applyRecognition(current, result.tags) : current), recognitionPhotoUrl: result.url }));
+      if (result.tagging_error) setFormError(result.tagging_error);
+    } catch (error) { setFormError(error.message); }
+    finally { setBusy(false); }
   }
 
   async function rotatePhoto(degrees) {
@@ -500,6 +538,7 @@ export default function WardrobeScreen({
             </Text>
           </View>
 
+          <ActionButton title="Collections & wishlist · favorites, laundry and more" secondary onPress={() => router.push('/collections')} />
           <View style={styles.modeRow}>
             <Pressable
               accessibilityRole="button"
@@ -695,7 +734,15 @@ export default function WardrobeScreen({
                 <Text style={styles.checkLabel}>Waterproof (only if verified)</Text>
               </Pressable>
 
+              <Text style={styles.formLabel}>Material · optional</Text>
+              <TextInput accessibilityLabel="Material, optional" value={form.material || ''} onChangeText={(value) => updateForm('material', value)} style={styles.textInput} />
+              <Text style={styles.formLabel}>Pattern or design · optional</Text>
+              <TextInput accessibilityLabel="Pattern or design, optional" value={form.design || ''} onChangeText={(value) => updateForm('design', value)} style={styles.textInput} />
               <Text style={styles.formLabel}>Clothing photo · optional</Text>
+              <TextInput accessibilityLabel="Direct clothing image URL" value={photoUrl} onChangeText={setPhotoUrl} placeholder="https://…/clothing.jpg" style={styles.textInput} />
+              <ActionButton title="Import image URL" onPress={importUrl} disabled={busy || !photoUrl.trim()} secondary />
+              {photoDraftUri ? <ActionButton title={busy ? 'Processing photo…' : 'Recognize clothing'} onPress={recognizePhoto} disabled={busy} secondary /> : null}
+              {form.recognition ? <View><Text style={styles.formIntro}>Review AI details before saving. Choose suitable occasions below so this piece can appear in recommendations.</Text><Text style={styles.itemMeta}>{JSON.stringify(form.recognition, null, 2)}</Text></View> : null}
               {photoDraftUri ? (
                 <Image
                   accessibilityLabel="Preview of the clothing photo"

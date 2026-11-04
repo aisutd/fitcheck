@@ -10,6 +10,11 @@ module.exports = defineConfig([
     rules: { 'react/no-unknown-property': 'off' },
   },
   {
-    ignores: ["dist/*"],
+    files: ['src/features/privacy/**/*.ts', 'src/features/privacy/**/*.tsx', 'src/features/collections/TabScreen.js'],
+    // Preserve the contributor's request/retry state transitions while loading external storage.
+    rules: { 'react-hooks/set-state-in-effect': 'off' },
+  },
+  {
+    ignores: ["dist/**", "dist-web/**", "dist-ios/**", "test-results/**", ".venv/**", "services/**/node_modules/**"],
   }
 ]);

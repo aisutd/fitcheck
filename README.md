@@ -1,130 +1,74 @@
 # FitCheck
 
-FitCheck is an Expo and React Native fashion styling prototype. The current app
-includes occasion-aware outfit suggestions, separate Personal and Demo
-wardrobes, locally stored clothing photos, and a locally saved 10-question
-Know You style quiz. Avatar Studio adds an interactive, locally rendered
-stylized 3D avatar with saved appearance and camera controls.
+An integrated Expo 57 / React Native application for web, iOS and Android. Vaibhav’s editorial outfit homepage, questionnaire, avatar, wardrobe, saved looks, style memory, travel planner and shopping flow remain the foundation. Recognition, collections/wishlist, Groq search, Gemini analysis and cloud privacy tools are connected through Expo Router and shared wardrobe state.
 
-Personalized suggestions use the saved quiz profile and metadata entered for
-each clothing item. The three ranked priorities use weights 6 / 3 / 1 in saved
-order. Match percentages are normalized only across available, relevant
-metadata; a percentage is omitted when there is no supporting metadata.
-Weather matching uses the condition selected in Suggest and explicit garment
-weather tags, not a live forecast. Familiar, Balanced, and Creative variety
-controls and rerolls do not override the selected occasion or available items.
+See [INTEGRATION_REPORT.md](INTEGRATION_REPORT.md) for the branch inventory, preservation decisions, actual validation results and limitations.
 
-## Development
+## Start the app
 
-```bash
-npm install
-npm start
+Use Node 22+ (local validation used Node 24). From the repository root:
+
+```sh
+npm ci
+npm ci --prefix services/search
+npm ci --prefix services/analysis
+cp .env.example .env.local
+npm run web
 ```
 
-Run the focused logic checks with:
+`npm run ios` and `npm run android` start Expo for those platforms. A physical phone needs reachable LAN service URLs in `.env.local`; `localhost` on a phone refers to the phone. Native modules require the compatible Expo Go/development build. No simulator testing is claimed.
 
-```bash
-npm run test:quiz
-npm run test:wardrobe
-npm run test:recommendations
-npm run test:avatar
+You can use the quiz, manual wardrobe, avatar, local outfit recommendations, saved looks and travel planner without external API keys. Open Wardrobe → Demo Mode to explore authored sample clothes. Personal and sample closets remain separate. Weather is manually selected in Refine; the quiz’s weather preferences affect known garment attributes.
+
+The homepage exposes Search and Privacy & data. Outfit details and personal clothing cards expose try-on and photo analysis. Wardrobe → Collections & wishlist preserves the recognition contributor’s favorites, laundry, wear counts, filters, sample photos and bulk wishlist transfers. Set suitable occasions in the main wardrobe form before a new item can appear in recommendations. Recognition results are editable suggestions, never ground truth.
+
+## Backend setup
+
+Python 3.13+ is recommended; lightweight service tests were run locally on Python 3.14. Keep model inference dependencies in a separate environment if your Torch build requires a different supported Python version.
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
 ```
 
-Quiz drafts, confirmed style profiles, wardrobe records, and demo availability
-are stored locally on the device. Clothing photos are copied into the app's
-local documents directory. FitCheck does not send these records or photos to a
-backend.
+Run required services in separate terminals. API keys belong only in service `.env.local` files or server environment variables. The root `.env.local` contains public service origins and the Supabase publishable key only.
 
-Avatar appearance preferences are stored locally. The avatar is a stylized
-illustration, not a body scan or garment fit simulation. The renderer uses
-React Three Fiber, Three.js, and Expo GL. Expo SDK 57 includes Expo GL in
-Expo Go, but iOS Simulator OpenGL support may be unreliable; verify rendering
-on a physical iOS device before relying on it.
+| Service | Start from repository root | Configuration |
+|---|---|---|
+| Shopping | `npm run shopping:server` | Copy `server/.env.example` to `server/.env.local`; set `SERPAPI_KEY`. Port 8789; `SHOPPING_WEB_ORIGIN` must match your browser origin. |
+| AI search | `npm run search:server` | Copy `services/search/.env.example` to `.env.local` in that directory; set `GROQ_API_KEY`. Port 5001. |
+| Photo analysis | `npm run analysis:server` | Copy `services/analysis/.env.example` to `.env.local` there; set `GEMINI_API_KEY`, confirm an accessible `GEMINI_MODEL`, and set `ALLOWED_ORIGINS`. Port 8787. |
+| Try-on | `.venv/bin/python -m uvicorn app.main:app --app-dir services/tryon --host 0.0.0.0 --port 8001` | Copy `services/tryon/.env.example` to `.env.local` there. Set `COLAB_API_URL` and `COLAB_API_KEY` for the original `/generate` model endpoint. |
+| Recognition | `.venv/bin/python services/recognition/server.py` | Install `services/recognition/requirements.txt` in an inference-compatible environment. Port 5050. Optional `FASHIONCLIP_MODEL_PATH` and `FASHION_CLASSIFIERS_DIR` in `services/recognition/.env.local`. The first inference downloads FashionCLIP weights unless a local model is supplied. |
+| Privacy | `.venv/bin/python -m uvicorn server:app --app-dir services/privacy --host 0.0.0.0 --port 8000` | Copy `services/privacy/.env.example` to `.env.local` there. Configure the same Supabase URL/publishable key as the app; enable anonymous sign-in and apply `services/privacy/supabase/SETUP_ALL.sql`. Set `APP_ORIGINS`. |
 
-## Docker
+Try-on sends a real person photo and a garment photo as multipart inputs and displays the model’s returned image. The local parametric avatar has no compatible photographic export. Analysis preserves single-image recognition confidence, human reviews and potential bias findings; its values are not outfit taste ratings or independently measured population accuracy.
 
-`docker-compose.yml` is a generic starter configuration and is not required to
-run the Expo application.
+Privacy controls manage Supabase preferences and photos uploaded through the privacy service. They do not control local wardrobe storage, recognition-service files, or independent AI provider retention. Cloud deletion is labeled accordingly. No credentials, account, SQL deployment or live model setup is provisioned automatically.
 
-## Know You weather preferences
+Recognition training/evaluation tools, annotations and reference images are retained under `services/recognition/`. The unmodified source notes describe their original paths; use this integrated path when following those documents. `test_model.py` explicitly downloads model weights and is a manual smoke script, not part of offline CI.
 
-Cold-weather outfit choices and hot-weather coverage answers now influence
-recommendation ranking when garments have explicit Warmth or Coverage details.
-Add these optional details in the wardrobe editor. Unknown details are not guessed
-from names or photos. An explicit cold-weather outfit choice takes precedence over
-cold sensitivity; selecting both light and warm options permits either.
+## Checks
 
-Personal weather matching replaces generic weather-tag matching when relevant
-personal and garment details exist, retaining the ranked priority weights 6 / 3 / 1.
-Otherwise the existing weather-tag behavior is retained. The selected occasion
-and item availability still constrain every result. Explanations identify the quiz
-answer used. This is a deterministic preference rule based on individual answers,
-not a trained model, repeated-observation confidence, or a live forecast.
+```sh
+npm test
+npm run typecheck
+npm run lint
+npm run build:web -- --output-dir dist-web
+npm run build:ios -- --output-dir dist-ios
+npx playwright install chromium
+npm run test:web
+```
 
-Run `npm run test:weather` for contrasting Date Night profiles and edge cases.
-Device verification, repeated weather scenarios, avatar integration, and shopping
-integration remain separate milestones.
+With Chrome already installed, you can use `CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run test:web` on macOS. The test preview runs on port 8081. `npm run serve:web` serves an exported `dist-web` bundle locally.
 
-## Avatar onboarding and preview quality
+Run backend tests separately to avoid collisions between their modules named `server`:
 
-The first confirmed quiz profile opens Avatar Studio when avatar storage is ready.
-Use See outfits to continue immediately; edits to an existing quiz profile return
-to suggestions. Avatar appearance remains user-selected and locally saved.
+```sh
+(cd services/tryon && ../../.venv/bin/python -m pytest tests -q)
+(cd services/privacy && ../../.venv/bin/python -m unittest test_connection -v)
+(cd services/recognition && ../../.venv/bin/python -m unittest test_attributes test_evaluate_tagger test_remote_images test_train_categories -v)
+```
 
-Auto preview quality starts low, then uses reported graphics capability and startup
-time: texture limits below 4096 or startup above 2.5 seconds retain low detail.
-Low uses pixel ratio 1 and 10 geometry segments; Standard uses pixel ratio 1.5
-and 24 segments. Manual selection overrides Auto for the current studio session.
-This is startup adaptation, not continuous FPS or battery monitoring. The renderer
-remains on-demand and retains its timeout, retry, and error fallback.
-
-System reduced motion disables drag rotation; explicit view buttons remain usable.
-There is no automatic avatar rotation. Quality selection is session-only; appearance
-settings retain their existing storage format. Run `npm run test:render-quality`.
-Physical-device motion, graphics, persistence and screen-reader checks remain pending.
-
-## Shopping edit
-
-Each outfit opens a dedicated Expo Router shopping route. Missing essentials are
-selected first; complete looks offer optional alternatives. The editorial product
-grid uses large images and restrained USD prices, with an optional maximum per
-item. Product taps open external shopping links; products are never inserted into
-the owned wardrobe. Searches run only after Find pieces is tapped.
-
-See `server/README.md` for private SerpApi setup, the public backend URL, local
-phone networking, hosting and limits. With no backend/key the app displays a clear
-unavailable state. There are no fabricated listings or silent demo fallbacks.
-Run `npm run test:shopping` for backend and normalization checks.
-
-Expo Router now owns the app entry and shopping route; existing home quiz,
-wardrobe and avatar views retain their current state and local persistence.
-
-## October 28 checkpoint
-
-See `docs/CHECKPOINT.md` for implemented features, remaining requirements,
-mentor hosting handoff, demo instructions and verification limits. Run `npm test`
-for all logic suites and `npm run evaluate:checkpoint` for controlled sample cases.
-The weather quiz now previews illustrative sleeve lengths, bottoms and a layer
-without changing the user's saved avatar appearance or quiz selections. The later orbit milestone adds arc browsing and an optional real-product example
-loader; hosted live products and exact product garments remain unverified.
-
-## Orbit carousel and dataset baseline
-
-Weather questions now browse answer ideas in an arc around the avatar, with
-explicit Add to answers confirmation. Choice-specific shopping examples are wired
-for the hosted service; unavailable live data is clearly labeled. See
-`docs/CAROUSEL.md` for behavior and verification limits.
-
-`npm run evaluate:polyvore -- /path/to/polyvore-data` reproduces an offline
-category-pair baseline on the original dataset. Its measured ROC-AUC is 0.735029
-on 7,061 evaluable compatibility examples. This is neither app accuracy nor a
-personalized match score; see `docs/POLYVORE-EVALUATION.md` for method and limitations.
-
-## Standalone Suggest / Know You tools
-
-Style memory records local outfit feedback with explicit per-mode enablement;
-saved looks preserve references to complete outfits; travel capsules plan up to
-five days from available wardrobe pieces. Concert, Travel and Sleepwear are new
-explicitly tagged occasions, with footwear optional for Sleepwear. No teammate
-services or account are required. See `docs/STANDALONE-SUGGEST.md` for limits,
-learning behavior, storage, and verification. `npm test` includes the new checks.
+CI retains the contributor’s aggregate CI gate and dependency automation, adds actual app exports/browser journeys, and runs service tests without live provider calls. The Compose file remains the original development shell container; it does not launch the application or its services.

@@ -136,7 +136,7 @@ export default function SuggestScreen({
   const savedCount = memory.data.saved.filter((look) => look.mode === wardrobeMode).length;
   const quizLabel = draft ? 'Continue your quiz' : profile ? 'Your style profile' : 'Find your personal style';
   function shop(recommendation) {
-    const missing = REQUIRED_CATEGORY_LABELS.filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id)).map(({ id }) => id);
+    const missing = REQUIRED_CATEGORY_LABELS.filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id || (['top', 'bottom'].includes(id) && item.category === 'onepiece'))).map(({ id }) => id);
     router.push({ pathname: '/shopping', params: {
       occasion, category: missing[0] || 'layer', missing: missing.join(','),
       style: profile?.answers?.q1?.styles?.[0] || '',
@@ -149,7 +149,7 @@ export default function SuggestScreen({
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.wordmark}>fitcheck<Text style={styles.wordmarkDot}>.</Text></Text>
-            <View style={styles.modeBadge}><View style={styles.modeDot} /><Text style={styles.modeText}>{wardrobeMode === 'demo' ? 'Demo closet' : 'Your closet'}</Text></View>
+            <View style={styles.modeBadge}><Pressable accessibilityRole="button" onPress={() => router.push('/search')} style={styles.textButton}><Text style={styles.link}>Search</Text></Pressable><View style={styles.modeDot} /><Text style={styles.modeText}>{wardrobeMode === 'demo' ? 'Demo closet' : 'Your closet'}</Text></View>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nav}>
             <View style={[styles.navItem, styles.navActive]}><Text style={styles.navActiveText}>Outfits</Text></View>
@@ -214,7 +214,8 @@ export default function SuggestScreen({
                 {memoryNotice.signature === recommendation.signature ? <Text accessibilityLiveRegion="polite" style={styles.body}>{memoryNotice.text}</Text> : null}
                 {isOpen ? <View style={styles.details}>
                   {recommendation.items.map((item) => <View key={item.id} style={styles.pieceRow}><View style={[styles.pieceDot, { backgroundColor: item.colorHex || '#A9ADA3' }]} /><View style={styles.flex}><Text style={styles.pieceCategory}>{item.category}</Text><Text style={styles.pieceName}>{item.name}</Text></View></View>)}
-                  {REQUIRED_CATEGORY_LABELS.filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id)).map((item) => <Text key={item.id} style={styles.body}>Missing: {item.label}</Text>)}
+                  {REQUIRED_CATEGORY_LABELS.filter(({ id }) => (occasion !== 'Sleepwear' || id !== 'shoes') && !recommendation.items.some((item) => item.category === id || (['top', 'bottom'].includes(id) && item.category === 'onepiece'))).map((item) => <Text key={item.id} style={styles.body}>Missing: {item.label}</Text>)}
+                  <View style={styles.wrap}><Pressable accessibilityRole="button" style={styles.choice} onPress={() => router.push({ pathname: '/try-on', params: { items: recommendation.items.map((item) => item.id).join(',') } })}><Text style={styles.choiceText}>Try on a piece</Text></Pressable><Pressable accessibilityRole="button" style={styles.choice} onPress={() => router.push({ pathname: '/analysis', params: { items: recommendation.items.map((item) => item.id).join(',') } })}><Text style={styles.choiceText}>Analyze a photo</Text></Pressable></View>
                   <Text style={styles.filterLabel}>How does this feel?</Text>
                   <View style={styles.wrap}>{[['like','Like this'],['not-style','Not my style'],['too-warm','Too warm'],['too-cold','Too cold'],['comfortable','Comfortable']].map(([id,label]) => {
                     const disabled = !memory.ready || memoryBusy || (!weatherCondition && ['too-warm','too-cold','comfortable'].includes(id));
@@ -235,7 +236,7 @@ export default function SuggestScreen({
             })}
           </View>
           {!result.recommendations.length ? <View style={styles.empty}><Text style={styles.sectionTitle}>Your next great outfit starts here.</Text><Text style={styles.subtitle}>Add pieces to your wardrobe, or explore the Demo closet.</Text><Pressable accessibilityRole="button" onPress={onOpenWardrobe} style={styles.primary}><Text style={styles.primaryText}>Open wardrobe →</Text></Pressable></View> : <Pressable accessibilityRole="button" accessibilityState={{ disabled: !result.moreAvailable && !shownSignatures.length }} disabled={!result.moreAvailable && !shownSignatures.length} onPress={generateAnotherThree} style={[styles.moreButton, !result.moreAvailable && !shownSignatures.length && styles.disabled]}><Text style={styles.link}>{!result.moreAvailable && shownSignatures.length ? 'Start this edit again' : 'Discover another 3 looks'} ↻</Text></Pressable>}
-          <View style={styles.footer}><Text style={styles.footerBrand}>A little more you.</Text><Text style={styles.footerText}>{wardrobeMode === 'demo' ? 'Sample closet · Illustrated examples, not shop products' : 'Styled from your personal wardrobe'} · {result.matchingItemCount} available pieces</Text></View>
+          <View style={styles.footer}><Pressable accessibilityRole="button" onPress={() => router.push('/privacy')} style={styles.textButton}><Text style={styles.link}>Privacy & data →</Text></Pressable><Text style={styles.footerBrand}>A little more you.</Text><Text style={styles.footerText}>{wardrobeMode === 'demo' ? 'Sample closet · Illustrated examples, not shop products' : 'Styled from your personal wardrobe'} · {result.matchingItemCount} available pieces</Text></View>
         </View>
       </ScrollView>
     </SafeAreaView>

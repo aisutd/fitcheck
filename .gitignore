@@ -43,3 +43,20 @@ yarn-error.*
 # Private configuration
 .env
 server/.env
+
+# Integrated service artifacts
+__pycache__/
+*.pyc
+.venv/
+.fitcheck-private/
+storage/
+*.sqlite3
+*.joblib
+*.safetensors
+*.pt
+*.pth
+
+dist-web/
+test-results/
+playwright-report/
+dist-ios/

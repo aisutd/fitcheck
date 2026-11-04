@@ -40,7 +40,7 @@ function styleAffinity(state, mode, occasion, weather, signature) {
 }
 function toggleSavedLook(state, context, items, at = new Date().toISOString()) {
   if (!validContext(context) || !items.length || !items.every((item) => typeof item.id === 'string' && typeof item.name === 'string')) throw new Error('This outfit cannot be saved.');
-  if (!requiredCategories(context.occasion).every((category) => items.some((item) => item.category === category))) throw new Error('Complete this outfit before saving it.');
+  if (!requiredCategories(context.occasion).every((category) => items.some((item) => item.category === category || (['top', 'bottom'].includes(category) && item.category === 'onepiece')))) throw new Error('Complete this outfit before saving it.');
   const signature = items.map((item) => item.id).sort().join('|');
   const key = [context.mode, context.occasion, signature].join('::');
   if (state.saved.some((entry) => entry.key === key)) return { ...state, saved: state.saved.filter((entry) => entry.key !== key) };

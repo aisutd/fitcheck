@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { FitCheckProvider } from '../../App';
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <FitCheckProvider><Stack screenOptions={{ headerShown: false }} /></FitCheckProvider>;
 }

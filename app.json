@@ -15,7 +15,8 @@
           "microphonePermission": false
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-sharing"
     ],
     "ios": {
       "supportsTablet": true

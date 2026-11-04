@@ -340,7 +340,7 @@ function buildCandidates(occasion, wardrobe, profile, weatherCondition, variety,
       !item.id ||
       seenIds.has(item.id) ||
       item.available === false ||
-      !CATEGORY_IDS.includes(item.category) ||
+      !(CATEGORY_IDS.includes(item.category) || item.category === 'onepiece') ||
       !Array.isArray(item.occasions) ||
       !item.occasions.includes(occasion)
     ) {
@@ -351,21 +351,21 @@ function buildCandidates(occasion, wardrobe, profile, weatherCondition, variety,
   }
 
   const byCategory = Object.fromEntries(
-    CATEGORY_IDS.map((category) => [category, matchingItems.filter((item) => item.category === category)]),
+    [...CATEGORY_IDS, 'onepiece'].map((category) => [category, matchingItems.filter((item) => item.category === category)]),
   );
   const required = REQUIRED_CATEGORIES.filter(({ id }) => requiredCategories(occasion).includes(id));
   const missingCategories = required
-    .filter(({ id }) => !byCategory[id].length)
+    .filter(({ id }) => !byCategory[id].length && !(byCategory.onepiece.length && ['top', 'bottom'].includes(id)))
     .map(({ id, label }) => ({ id, label }));
   const unavailableCategories = required
-    .filter(({ id }) => !byCategory[id].length)
+    .filter(({ id }) => !byCategory[id].length && !(byCategory.onepiece.length && ['top', 'bottom'].includes(id)))
     .filter(({ id }) =>
       (options.fullWardrobe || []).some(
         (item) => item.category === id && item.available === false && item.occasions?.includes(occasion),
       ),
     );
   const recentlyDeletedCategories = required
-    .filter(({ id }) => !byCategory[id].length)
+    .filter(({ id }) => !byCategory[id].length && !(byCategory.onepiece.length && ['top', 'bottom'].includes(id)))
     .filter(({ id }) =>
       (options.recentlyDeleted || []).some(
         (item) => item.category === id && item.occasions?.includes(occasion),
@@ -407,8 +407,22 @@ function buildCandidates(occasion, wardrobe, profile, weatherCondition, variety,
     }
   }
 
+  for (const piece of byCategory.onepiece) {
+    for (const shoe of shoes) {
+      for (const layer of layers) {
+        for (const accessory of accessories) {
+          const items = [piece, shoe, layer, accessory].filter(Boolean);
+          candidates.push(buildCandidate(items, occasion, profile, weatherCondition, variety, previousSignatures, occasion === 'Sleepwear' || Boolean(shoe), options.weatherOverride || null));
+        }
+      }
+    }
+  }
+  // Separate top/bottom candidates still need their own required pieces.
+  for (const candidate of candidates) {
+    candidate.complete = required.every(({ id }) => candidate.items.some((item) => item.category === id || (['top', 'bottom'].includes(id) && item.category === 'onepiece')));
+  }
   return {
-    candidates,
+    candidates: byCategory.onepiece.length && candidates.some((candidate) => candidate.complete) ? candidates.filter((candidate) => candidate.complete) : candidates,
     missingCategories,
     matchingItems,
     unavailableCategories,

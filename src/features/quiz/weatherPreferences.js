@@ -61,7 +61,7 @@ function scorePersonalWeather(items, profile, condition, override = null) {
     const known = items.filter((item) => {
       if (!choices.some((choice) => !choice.categories || choice.categories.includes(item.category))) return false;
       if (field === 'waterproof') return item.category === 'layer' && item.waterproof === true;
-      return ['top', 'bottom', 'layer'].includes(item.category) &&
+      return ['top', 'bottom', 'layer', 'onepiece'].includes(item.category) &&
         (field === 'warmth' ? ['Light', 'Warm'] : ['Minimal', 'Moderate', 'More']).includes(item[field] || '');
     });
     if (!known.length) return [];

@@ -1,0 +1,1490 @@
+{
+  "record_count": 43,
+  "labels_sha256": "ec6aa5ae004480d0f73f8de00959208faadf194a7cad79c822570faa6e875c43",
+  "attributes": {
+    "item": {
+      "labeled": 43,
+      "missing": 0,
+      "classes": {
+        "boots": {
+          "count": 4,
+          "examples": [
+            {
+              "line": 3,
+              "filename": "boots.jpg"
+            },
+            {
+              "line": 22,
+              "filename": "BlackCrocodilePrintPointedWesternBootsPointedToe.webp"
+            },
+            {
+              "line": 23,
+              "filename": "il_fullxfull.5515609380_4qli.webp"
+            }
+          ]
+        },
+        "dress": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 17,
+              "filename": "woman-black-dress-cn63926165.jpg"
+            },
+            {
+              "line": 27,
+              "filename": "purple-dress.jpg"
+            },
+            {
+              "line": 28,
+              "filename": "red-dress.jpg"
+            }
+          ]
+        },
+        "dress shoe": {
+          "count": 7,
+          "examples": [
+            {
+              "line": 4,
+              "filename": "heels-1.jpg"
+            },
+            {
+              "line": 5,
+              "filename": "heels-2.jpg"
+            },
+            {
+              "line": 6,
+              "filename": "heels-3.jpg"
+            }
+          ]
+        },
+        "jacket": {
+          "count": 4,
+          "examples": [
+            {
+              "line": 7,
+              "filename": "men-shirt-2.jpg"
+            },
+            {
+              "line": 24,
+              "filename": "leather-jacket.webp"
+            },
+            {
+              "line": 32,
+              "filename": "clear-jacket.jpg"
+            }
+          ]
+        },
+        "jeans": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 18,
+              "filename": "woman-blue-long-jean-cn63843522.jpg"
+            },
+            {
+              "line": 30,
+              "filename": "black-jean_0.webp"
+            },
+            {
+              "line": 31,
+              "filename": "jean-blue.png"
+            }
+          ]
+        },
+        "pants": {
+          "count": 5,
+          "examples": [
+            {
+              "line": 26,
+              "filename": "khaki-pants.jpg"
+            },
+            {
+              "line": 29,
+              "filename": "slack-pants.jpg"
+            },
+            {
+              "line": 39,
+              "filename": "jogger-black.avif"
+            }
+          ]
+        },
+        "shirt": {
+          "count": 4,
+          "examples": [
+            {
+              "line": 8,
+              "filename": "men-shirt.jpg"
+            },
+            {
+              "line": 21,
+              "filename": "woman-shirt-1.jpg"
+            },
+            {
+              "line": 33,
+              "filename": "green-shirt_.jpg"
+            }
+          ]
+        },
+        "shorts": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 37,
+              "filename": "green-shorts.avif"
+            },
+            {
+              "line": 38,
+              "filename": "istockphoto-1463785097-612x612.jpg"
+            },
+            {
+              "line": 42,
+              "filename": "shorts-black.avif"
+            }
+          ]
+        },
+        "sneakers": {
+          "count": 6,
+          "examples": [
+            {
+              "line": 1,
+              "filename": "adidas-men.jpg"
+            },
+            {
+              "line": 2,
+              "filename": "adidas-women.jpg"
+            },
+            {
+              "line": 11,
+              "filename": "nike-men.jpg"
+            }
+          ]
+        },
+        "sweater": {
+          "count": 2,
+          "examples": [
+            {
+              "line": 19,
+              "filename": "woman-blue-sweater-cn62796634.jpg"
+            },
+            {
+              "line": 20,
+              "filename": "woman-pink-sweater-cn63067173.jpg"
+            }
+          ]
+        },
+        "t-shirt": {
+          "count": 2,
+          "examples": [
+            {
+              "line": 15,
+              "filename": "t-shirt.jpg"
+            },
+            {
+              "line": 16,
+              "filename": "t-shirt2.jpg"
+            }
+          ]
+        }
+      },
+      "missing_images": []
+    },
+    "category": {
+      "labeled": 43,
+      "missing": 0,
+      "classes": {
+        "Bottoms": {
+          "count": 11,
+          "examples": [
+            {
+              "line": 18,
+              "filename": "woman-blue-long-jean-cn63843522.jpg"
+            },
+            {
+              "line": 26,
+              "filename": "khaki-pants.jpg"
+            },
+            {
+              "line": 29,
+              "filename": "slack-pants.jpg"
+            }
+          ]
+        },
+        "Dresses": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 17,
+              "filename": "woman-black-dress-cn63926165.jpg"
+            },
+            {
+              "line": 27,
+              "filename": "purple-dress.jpg"
+            },
+            {
+              "line": 28,
+              "filename": "red-dress.jpg"
+            }
+          ]
+        },
+        "Shoes": {
+          "count": 17,
+          "examples": [
+            {
+              "line": 1,
+              "filename": "adidas-men.jpg"
+            },
+            {
+              "line": 2,
+              "filename": "adidas-women.jpg"
+            },
+            {
+              "line": 3,
+              "filename": "boots.jpg"
+            }
+          ]
+        },
+        "Tops": {
+          "count": 12,
+          "examples": [
+            {
+              "line": 7,
+              "filename": "men-shirt-2.jpg"
+            },
+            {
+              "line": 8,
+              "filename": "men-shirt.jpg"
+            },
+            {
+              "line": 15,
+              "filename": "t-shirt.jpg"
+            }
+          ]
+        }
+      },
+      "missing_images": []
+    },
+    "color": {
+      "labeled": 42,
+      "missing": 1,
+      "classes": {
+        "Beige": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 13,
+              "filename": "puma-men.jpg"
+            },
+            {
+              "line": 21,
+              "filename": "woman-shirt-1.jpg"
+            },
+            {
+              "line": 26,
+              "filename": "khaki-pants.jpg"
+            }
+          ]
+        },
+        "Black": {
+          "count": 11,
+          "examples": [
+            {
+              "line": 8,
+              "filename": "men-shirt.jpg"
+            },
+            {
+              "line": 17,
+              "filename": "woman-black-dress-cn63926165.jpg"
+            },
+            {
+              "line": 22,
+              "filename": "BlackCrocodilePrintPointedWesternBootsPointedToe.webp"
+            }
+          ]
+        },
+        "Blue": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 18,
+              "filename": "woman-blue-long-jean-cn63843522.jpg"
+            },
+            {
+              "line": 19,
+              "filename": "woman-blue-sweater-cn62796634.jpg"
+            },
+            {
+              "line": 31,
+              "filename": "jean-blue.png"
+            }
+          ]
+        },
+        "Brown": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 3,
+              "filename": "boots.jpg"
+            },
+            {
+              "line": 9,
+              "filename": "men-shoe.jpg"
+            },
+            {
+              "line": 10,
+              "filename": "men-shoes.jpg"
+            }
+          ]
+        },
+        "Gray": {
+          "count": 3,
+          "examples": [
+            {
+              "line": 29,
+              "filename": "slack-pants.jpg"
+            },
+            {
+              "line": 40,
+              "filename": "jogger-grey.webp"
+            },
+            {
+              "line": 41,
+              "filename": "jogger-o.jpg"
+            }
+          ]
+        },
+        "Green": {
+          "count": 5,
+          "examples": [
+            {
+              "line": 7,
+              "filename": "men-shirt-2.jpg"
+            },
+            {
+              "line": 15,
+              "filename": "t-shirt.jpg"
+            },
+            {
+              "line": 16,
+              "filename": "t-shirt2.jpg"
+            }
+          ]
+        },
+        "Pink": {
+          "count": 2,
+          "examples": [
+            {
+              "line": 20,
+              "filename": "woman-pink-sweater-cn63067173.jpg"
+            },
+            {
+              "line": 28,
+              "filename": "red-dress.jpg"
+            }
+          ]
+        },
+        "Purple": {
+          "count": 2,
+          "examples": [
+            {
+              "line": 27,
+              "filename": "purple-dress.jpg"
+            },
+            {
+              "line": 35,
+              "filename": "women-jacket.jpeg"
+            }
+          ]
+        },
+        "White": {
+          "count": 10,
+          "examples": [
+            {
+              "line": 1,
+              "filename": "adidas-men.jpg"
+            },
+            {
+              "line": 2,
+              "filename": "adidas-women.jpg"
+            },
+            {
+              "line": 4,
+              "filename": "heels-1.jpg"
+            }
+          ]
+        }
+      },
+      "missing_images": [
+        "clear-jacket.jpg"
+      ]
+    },
+    "design": {
+      "labeled": 0,
+      "missing": 43,
+      "classes": {},
+      "missing_images": [
+        "adidas-men.jpg",
+        "adidas-women.jpg",
+        "boots.jpg",
+        "heels-1.jpg",
+        "heels-2.jpg",
+        "heels-3.jpg",
+        "men-shirt-2.jpg",
+        "men-shirt.jpg",
+        "men-shoe.jpg",
+        "men-shoes.jpg",
+        "nike-men.jpg",
+        "nike-women.jpg",
+        "puma-men.jpg",
+        "puma-women.jpg",
+        "t-shirt.jpg",
+        "t-shirt2.jpg",
+        "woman-black-dress-cn63926165.jpg",
+        "woman-blue-long-jean-cn63843522.jpg",
+        "woman-blue-sweater-cn62796634.jpg",
+        "woman-pink-sweater-cn63067173.jpg",
+        "woman-shirt-1.jpg",
+        "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+        "il_fullxfull.5515609380_4qli.webp",
+        "leather-jacket.webp",
+        "mil-boots.webp",
+        "khaki-pants.jpg",
+        "purple-dress.jpg",
+        "red-dress.jpg",
+        "slack-pants.jpg",
+        "black-jean_0.webp",
+        "jean-blue.png",
+        "clear-jacket.jpg",
+        "green-shirt_.jpg",
+        "white-shirt.jpg",
+        "women-jacket.jpeg",
+        "ballet-shoes.webp",
+        "green-shorts.avif",
+        "istockphoto-1463785097-612x612.jpg",
+        "jogger-black.avif",
+        "jogger-grey.webp",
+        "jogger-o.jpg",
+        "shorts-black.avif",
+        "woman-shoes.webp"
+      ]
+    },
+    "material": {
+      "labeled": 0,
+      "missing": 43,
+      "classes": {},
+      "missing_images": [
+        "adidas-men.jpg",
+        "adidas-women.jpg",
+        "boots.jpg",
+        "heels-1.jpg",
+        "heels-2.jpg",
+        "heels-3.jpg",
+        "men-shirt-2.jpg",
+        "men-shirt.jpg",
+        "men-shoe.jpg",
+        "men-shoes.jpg",
+        "nike-men.jpg",
+        "nike-women.jpg",
+        "puma-men.jpg",
+        "puma-women.jpg",
+        "t-shirt.jpg",
+        "t-shirt2.jpg",
+        "woman-black-dress-cn63926165.jpg",
+        "woman-blue-long-jean-cn63843522.jpg",
+        "woman-blue-sweater-cn62796634.jpg",
+        "woman-pink-sweater-cn63067173.jpg",
+        "woman-shirt-1.jpg",
+        "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+        "il_fullxfull.5515609380_4qli.webp",
+        "leather-jacket.webp",
+        "mil-boots.webp",
+        "khaki-pants.jpg",
+        "purple-dress.jpg",
+        "red-dress.jpg",
+        "slack-pants.jpg",
+        "black-jean_0.webp",
+        "jean-blue.png",
+        "clear-jacket.jpg",
+        "green-shirt_.jpg",
+        "white-shirt.jpg",
+        "women-jacket.jpeg",
+        "ballet-shoes.webp",
+        "green-shorts.avif",
+        "istockphoto-1463785097-612x612.jpg",
+        "jogger-black.avif",
+        "jogger-grey.webp",
+        "jogger-o.jpg",
+        "shorts-black.avif",
+        "woman-shoes.webp"
+      ]
+    },
+    "length": {
+      "labeled": 0,
+      "missing": 43,
+      "classes": {},
+      "missing_images": [
+        "adidas-men.jpg",
+        "adidas-women.jpg",
+        "boots.jpg",
+        "heels-1.jpg",
+        "heels-2.jpg",
+        "heels-3.jpg",
+        "men-shirt-2.jpg",
+        "men-shirt.jpg",
+        "men-shoe.jpg",
+        "men-shoes.jpg",
+        "nike-men.jpg",
+        "nike-women.jpg",
+        "puma-men.jpg",
+        "puma-women.jpg",
+        "t-shirt.jpg",
+        "t-shirt2.jpg",
+        "woman-black-dress-cn63926165.jpg",
+        "woman-blue-long-jean-cn63843522.jpg",
+        "woman-blue-sweater-cn62796634.jpg",
+        "woman-pink-sweater-cn63067173.jpg",
+        "woman-shirt-1.jpg",
+        "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+        "il_fullxfull.5515609380_4qli.webp",
+        "leather-jacket.webp",
+        "mil-boots.webp",
+        "khaki-pants.jpg",
+        "purple-dress.jpg",
+        "red-dress.jpg",
+        "slack-pants.jpg",
+        "black-jean_0.webp",
+        "jean-blue.png",
+        "clear-jacket.jpg",
+        "green-shirt_.jpg",
+        "white-shirt.jpg",
+        "women-jacket.jpeg",
+        "ballet-shoes.webp",
+        "green-shorts.avif",
+        "istockphoto-1463785097-612x612.jpg",
+        "jogger-black.avif",
+        "jogger-grey.webp",
+        "jogger-o.jpg",
+        "shorts-black.avif",
+        "woman-shoes.webp"
+      ]
+    },
+    "fit": {
+      "labeled": 0,
+      "missing": 43,
+      "classes": {},
+      "missing_images": [
+        "adidas-men.jpg",
+        "adidas-women.jpg",
+        "boots.jpg",
+        "heels-1.jpg",
+        "heels-2.jpg",
+        "heels-3.jpg",
+        "men-shirt-2.jpg",
+        "men-shirt.jpg",
+        "men-shoe.jpg",
+        "men-shoes.jpg",
+        "nike-men.jpg",
+        "nike-women.jpg",
+        "puma-men.jpg",
+        "puma-women.jpg",
+        "t-shirt.jpg",
+        "t-shirt2.jpg",
+        "woman-black-dress-cn63926165.jpg",
+        "woman-blue-long-jean-cn63843522.jpg",
+        "woman-blue-sweater-cn62796634.jpg",
+        "woman-pink-sweater-cn63067173.jpg",
+        "woman-shirt-1.jpg",
+        "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+        "il_fullxfull.5515609380_4qli.webp",
+        "leather-jacket.webp",
+        "mil-boots.webp",
+        "khaki-pants.jpg",
+        "purple-dress.jpg",
+        "red-dress.jpg",
+        "slack-pants.jpg",
+        "black-jean_0.webp",
+        "jean-blue.png",
+        "clear-jacket.jpg",
+        "green-shirt_.jpg",
+        "white-shirt.jpg",
+        "women-jacket.jpeg",
+        "ballet-shoes.webp",
+        "green-shorts.avif",
+        "istockphoto-1463785097-612x612.jpg",
+        "jogger-black.avif",
+        "jogger-grey.webp",
+        "jogger-o.jpg",
+        "shorts-black.avif",
+        "woman-shoes.webp"
+      ]
+    },
+    "rise": {
+      "labeled": 0,
+      "missing": 43,
+      "classes": {},
+      "missing_images": [
+        "adidas-men.jpg",
+        "adidas-women.jpg",
+        "boots.jpg",
+        "heels-1.jpg",
+        "heels-2.jpg",
+        "heels-3.jpg",
+        "men-shirt-2.jpg",
+        "men-shirt.jpg",
+        "men-shoe.jpg",
+        "men-shoes.jpg",
+        "nike-men.jpg",
+        "nike-women.jpg",
+        "puma-men.jpg",
+        "puma-women.jpg",
+        "t-shirt.jpg",
+        "t-shirt2.jpg",
+        "woman-black-dress-cn63926165.jpg",
+        "woman-blue-long-jean-cn63843522.jpg",
+        "woman-blue-sweater-cn62796634.jpg",
+        "woman-pink-sweater-cn63067173.jpg",
+        "woman-shirt-1.jpg",
+        "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+        "il_fullxfull.5515609380_4qli.webp",
+        "leather-jacket.webp",
+        "mil-boots.webp",
+        "khaki-pants.jpg",
+        "purple-dress.jpg",
+        "red-dress.jpg",
+        "slack-pants.jpg",
+        "black-jean_0.webp",
+        "jean-blue.png",
+        "clear-jacket.jpg",
+        "green-shirt_.jpg",
+        "white-shirt.jpg",
+        "women-jacket.jpeg",
+        "ballet-shoes.webp",
+        "green-shorts.avif",
+        "istockphoto-1463785097-612x612.jpg",
+        "jogger-black.avif",
+        "jogger-grey.webp",
+        "jogger-o.jpg",
+        "shorts-black.avif",
+        "woman-shoes.webp"
+      ]
+    }
+  },
+  "unreferenced_photos": [
+    "socks-images.jpg",
+    "socks-mix.webp",
+    "socks-thick.webp",
+    "socks.webp"
+  ],
+  "proposals": [
+    {
+      "line": 7,
+      "filename": "men-shirt-2.jpg",
+      "field": "category",
+      "existing": "Tops",
+      "proposed": "Outerwear",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible jacket construction; matches the existing jacket-to-Outerwear mapping. Line 7 is an overshirt-style jacket; confirm that item choice if you prefer shirt."
+    },
+    {
+      "line": 24,
+      "filename": "leather-jacket.webp",
+      "field": "category",
+      "existing": "Tops",
+      "proposed": "Outerwear",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible jacket construction; matches the existing jacket-to-Outerwear mapping. Line 7 is an overshirt-style jacket; confirm that item choice if you prefer shirt."
+    },
+    {
+      "line": 32,
+      "filename": "clear-jacket.jpg",
+      "field": "category",
+      "existing": "Tops",
+      "proposed": "Outerwear",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible jacket construction; matches the existing jacket-to-Outerwear mapping. Line 7 is an overshirt-style jacket; confirm that item choice if you prefer shirt."
+    },
+    {
+      "line": 35,
+      "filename": "women-jacket.jpeg",
+      "field": "category",
+      "existing": "Tops",
+      "proposed": "Outerwear",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible jacket construction; matches the existing jacket-to-Outerwear mapping. Line 7 is an overshirt-style jacket; confirm that item choice if you prefer shirt."
+    },
+    {
+      "line": 15,
+      "filename": "t-shirt.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 16,
+      "filename": "t-shirt2.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 17,
+      "filename": "woman-black-dress-cn63926165.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 20,
+      "filename": "woman-pink-sweater-cn63067173.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 26,
+      "filename": "khaki-pants.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 29,
+      "filename": "slack-pants.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 33,
+      "filename": "green-shirt_.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 34,
+      "filename": "white-shirt.jpg",
+      "field": "design",
+      "existing": null,
+      "proposed": "Solid",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible garment body is predominantly a single color without an obvious repeating print. Ignore seams, buttons, shadows and texture for this label."
+    },
+    {
+      "line": 37,
+      "filename": "green-shorts.avif",
+      "field": "design",
+      "existing": null,
+      "proposed": "Graphic",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible printed lettering and small illustrated marks on the shorts."
+    },
+    {
+      "line": 17,
+      "filename": "woman-black-dress-cn63926165.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Mini",
+      "status": "Tentative \u2014 confirm garment length",
+      "image_evidence": "Dress hem appears well above a typical knee-length silhouette; flat-lay image has no body reference."
+    },
+    {
+      "line": 27,
+      "filename": "purple-dress.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Mini",
+      "status": "Tentative \u2014 confirm garment length",
+      "image_evidence": "Short dress silhouette; no wearer or measurement establishes actual hem position."
+    },
+    {
+      "line": 28,
+      "filename": "red-dress.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Mini",
+      "status": "Tentative \u2014 confirm garment length",
+      "image_evidence": "Short dress silhouette; no wearer or measurement establishes actual hem position."
+    },
+    {
+      "line": 37,
+      "filename": "green-shorts.avif",
+      "field": "length",
+      "existing": null,
+      "proposed": "Short",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Clearly shortened leg panels on the shorts, rather than full-length trouser legs."
+    },
+    {
+      "line": 38,
+      "filename": "istockphoto-1463785097-612x612.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Short",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Clearly shortened leg panels on the shorts, rather than full-length trouser legs."
+    },
+    {
+      "line": 42,
+      "filename": "shorts-black.avif",
+      "field": "length",
+      "existing": null,
+      "proposed": "Short",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Clearly shortened leg panels on the shorts, rather than full-length trouser legs."
+    },
+    {
+      "line": 18,
+      "filename": "woman-blue-long-jean-cn63843522.jpg",
+      "field": "material",
+      "existing": null,
+      "proposed": "Denim",
+      "status": "Uncertain material \u2014 verify product specification or care label",
+      "image_evidence": "Visible twill-like texture, jean construction and wash appearance support a denim candidate; exact composition and blend are not visible."
+    },
+    {
+      "line": 30,
+      "filename": "black-jean_0.webp",
+      "field": "material",
+      "existing": null,
+      "proposed": "Denim",
+      "status": "Uncertain material \u2014 verify product specification or care label",
+      "image_evidence": "Visible twill-like texture, jean construction and wash appearance support a denim candidate; exact composition and blend are not visible."
+    },
+    {
+      "line": 31,
+      "filename": "jean-blue.png",
+      "field": "material",
+      "existing": null,
+      "proposed": "Denim",
+      "status": "Uncertain material \u2014 verify product specification or care label",
+      "image_evidence": "Visible twill-like texture, jean construction and wash appearance support a denim candidate; exact composition and blend are not visible."
+    },
+    {
+      "line": 18,
+      "filename": "woman-blue-long-jean-cn63843522.jpg",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Wide-Leg",
+      "status": "Uncertain fit \u2014 review with measurements or wearer photo",
+      "image_evidence": "Leg panels appear broad through the lower leg. Flat product images cannot confirm fit on a wearer."
+    },
+    {
+      "line": 31,
+      "filename": "jean-blue.png",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Wide-Leg",
+      "status": "Uncertain fit \u2014 review with measurements or wearer photo",
+      "image_evidence": "Leg panels appear broad through the lower leg. Flat product images cannot confirm fit on a wearer."
+    },
+    {
+      "line": 39,
+      "filename": "jogger-black.avif",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Jogger",
+      "status": "Uncertain fit \u2014 confirm silhouette classification",
+      "image_evidence": "Visible elastic/drawstring waist and gathered or narrowed ankle cuffs support a jogger silhouette. Actual body fit remains unverified."
+    },
+    {
+      "line": 40,
+      "filename": "jogger-grey.webp",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Jogger",
+      "status": "Uncertain fit \u2014 confirm silhouette classification",
+      "image_evidence": "Visible elastic/drawstring waist and gathered or narrowed ankle cuffs support a jogger silhouette. Actual body fit remains unverified."
+    },
+    {
+      "line": 41,
+      "filename": "jogger-o.jpg",
+      "field": "fit",
+      "existing": null,
+      "proposed": "Jogger",
+      "status": "Uncertain fit \u2014 confirm silhouette classification",
+      "image_evidence": "Visible elastic/drawstring waist and gathered or narrowed ankle cuffs support a jogger silhouette. Actual body fit remains unverified."
+    },
+    {
+      "line": 1,
+      "filename": "adidas-men.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 2,
+      "filename": "adidas-women.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 3,
+      "filename": "boots.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 4,
+      "filename": "heels-1.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 5,
+      "filename": "heels-2.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 6,
+      "filename": "heels-3.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 9,
+      "filename": "men-shoe.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 10,
+      "filename": "men-shoes.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 11,
+      "filename": "nike-men.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 12,
+      "filename": "nike-women.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 13,
+      "filename": "puma-men.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 14,
+      "filename": "puma-women.jpg",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 22,
+      "filename": "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 23,
+      "filename": "il_fullxfull.5515609380_4qli.webp",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 25,
+      "filename": "mil-boots.webp",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 36,
+      "filename": "ballet-shoes.webp",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 43,
+      "filename": "woman-shoes.webp",
+      "field": "length",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Image depicts footwear; garment-length taxonomy does not apply."
+    },
+    {
+      "line": 1,
+      "filename": "adidas-men.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 2,
+      "filename": "adidas-women.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 3,
+      "filename": "boots.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 4,
+      "filename": "heels-1.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 5,
+      "filename": "heels-2.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 6,
+      "filename": "heels-3.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 7,
+      "filename": "men-shirt-2.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 8,
+      "filename": "men-shirt.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 9,
+      "filename": "men-shoe.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 10,
+      "filename": "men-shoes.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 11,
+      "filename": "nike-men.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 12,
+      "filename": "nike-women.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 13,
+      "filename": "puma-men.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 14,
+      "filename": "puma-women.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 15,
+      "filename": "t-shirt.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 16,
+      "filename": "t-shirt2.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 17,
+      "filename": "woman-black-dress-cn63926165.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 19,
+      "filename": "woman-blue-sweater-cn62796634.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 20,
+      "filename": "woman-pink-sweater-cn63067173.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 21,
+      "filename": "woman-shirt-1.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 22,
+      "filename": "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 23,
+      "filename": "il_fullxfull.5515609380_4qli.webp",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 24,
+      "filename": "leather-jacket.webp",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 25,
+      "filename": "mil-boots.webp",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 27,
+      "filename": "purple-dress.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 28,
+      "filename": "red-dress.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 32,
+      "filename": "clear-jacket.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 33,
+      "filename": "green-shirt_.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 34,
+      "filename": "white-shirt.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 35,
+      "filename": "women-jacket.jpeg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 36,
+      "filename": "ballet-shoes.webp",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 37,
+      "filename": "green-shorts.avif",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 38,
+      "filename": "istockphoto-1463785097-612x612.jpg",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 42,
+      "filename": "shorts-black.avif",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    },
+    {
+      "line": 43,
+      "filename": "woman-shoes.webp",
+      "field": "rise",
+      "existing": null,
+      "proposed": "Not Applicable",
+      "status": "Proposed \u2014 review before applying",
+      "image_evidence": "Visible item is outside the current pants/jeans rise scope. This is an applicability label, not a measured rise."
+    }
+  ],
+  "material_review_required": [
+    "adidas-men.jpg",
+    "adidas-women.jpg",
+    "boots.jpg",
+    "heels-1.jpg",
+    "heels-2.jpg",
+    "heels-3.jpg",
+    "men-shirt-2.jpg",
+    "men-shirt.jpg",
+    "men-shoe.jpg",
+    "men-shoes.jpg",
+    "nike-men.jpg",
+    "nike-women.jpg",
+    "puma-men.jpg",
+    "puma-women.jpg",
+    "t-shirt.jpg",
+    "t-shirt2.jpg",
+    "woman-black-dress-cn63926165.jpg",
+    "woman-blue-long-jean-cn63843522.jpg",
+    "woman-blue-sweater-cn62796634.jpg",
+    "woman-pink-sweater-cn63067173.jpg",
+    "woman-shirt-1.jpg",
+    "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+    "il_fullxfull.5515609380_4qli.webp",
+    "leather-jacket.webp",
+    "mil-boots.webp",
+    "khaki-pants.jpg",
+    "purple-dress.jpg",
+    "red-dress.jpg",
+    "slack-pants.jpg",
+    "black-jean_0.webp",
+    "jean-blue.png",
+    "clear-jacket.jpg",
+    "green-shirt_.jpg",
+    "white-shirt.jpg",
+    "women-jacket.jpeg",
+    "ballet-shoes.webp",
+    "green-shorts.avif",
+    "istockphoto-1463785097-612x612.jpg",
+    "jogger-black.avif",
+    "jogger-grey.webp",
+    "jogger-o.jpg",
+    "shorts-black.avif",
+    "woman-shoes.webp"
+  ],
+  "fit_review_required": [
+    "adidas-men.jpg",
+    "adidas-women.jpg",
+    "boots.jpg",
+    "heels-1.jpg",
+    "heels-2.jpg",
+    "heels-3.jpg",
+    "men-shirt-2.jpg",
+    "men-shirt.jpg",
+    "men-shoe.jpg",
+    "men-shoes.jpg",
+    "nike-men.jpg",
+    "nike-women.jpg",
+    "puma-men.jpg",
+    "puma-women.jpg",
+    "t-shirt.jpg",
+    "t-shirt2.jpg",
+    "woman-black-dress-cn63926165.jpg",
+    "woman-blue-long-jean-cn63843522.jpg",
+    "woman-blue-sweater-cn62796634.jpg",
+    "woman-pink-sweater-cn63067173.jpg",
+    "woman-shirt-1.jpg",
+    "BlackCrocodilePrintPointedWesternBootsPointedToe.webp",
+    "il_fullxfull.5515609380_4qli.webp",
+    "leather-jacket.webp",
+    "mil-boots.webp",
+    "khaki-pants.jpg",
+    "purple-dress.jpg",
+    "red-dress.jpg",
+    "slack-pants.jpg",
+    "black-jean_0.webp",
+    "jean-blue.png",
+    "clear-jacket.jpg",
+    "green-shirt_.jpg",
+    "white-shirt.jpg",
+    "women-jacket.jpeg",
+    "ballet-shoes.webp",
+    "green-shorts.avif",
+    "istockphoto-1463785097-612x612.jpg",
+    "jogger-black.avif",
+    "jogger-grey.webp",
+    "jogger-o.jpg",
+    "shorts-black.avif",
+    "woman-shoes.webp"
+  ],
+  "rise_review_required": [
+    "woman-blue-long-jean-cn63843522.jpg",
+    "khaki-pants.jpg",
+    "slack-pants.jpg",
+    "black-jean_0.webp",
+    "jean-blue.png",
+    "jogger-black.avif",
+    "jogger-grey.webp",
+    "jogger-o.jpg"
+  ]
+}

@@ -1,5 +1,5 @@
 const { QUIZ_SHOPPING } = require('../quiz/carouselModel');
-const SHOP_CATEGORIES = { top: 'Top', bottom: 'Bottom', shoes: 'Shoes', layer: 'Layer', accessory: 'Accessory' };
+const SHOP_CATEGORIES = { top: 'Top', bottom: 'Bottom', shoes: 'Shoes', layer: 'Layer', accessory: 'Accessory', onepiece: 'Dress or suit' };
 const { OCCASIONS } = require('../suggest/occasions');
 function validateSearch(input) {
   if (!input || !OCCASIONS.includes(input.occasion) || !Object.prototype.hasOwnProperty.call(SHOP_CATEGORIES, input.category)) {
@@ -18,7 +18,7 @@ function validateSearch(input) {
 }
 function buildShoppingQuery(input) {
   const search = validateSearch(input);
-  const nouns = { top: 'clothing top', bottom: 'pants skirt shorts', shoes: 'shoes', layer: 'jacket cardigan', accessory: 'fashion accessory' };
+  const nouns = { top: 'clothing top', bottom: 'pants skirt shorts', shoes: 'shoes', layer: 'jacket cardigan', accessory: 'fashion accessory', onepiece: 'dress suit' };
   return [search.style, search.occasion, (search.quizChoice ? QUIZ_SHOPPING[search.quizChoice].terms : nouns[search.category])].filter(Boolean).join(' ');
 }
 function safeHttps(value) {

@@ -63,6 +63,6 @@ function createShoppingServer({ apiKey = process.env.SERPAPI_KEY, fetchImpl = fe
   });
 }
 if (require.main === module) {
-  createShoppingServer().listen(Number(process.env.PORT) || 8787, '0.0.0.0', () => console.log('FitCheck shopping server started.'));
+  createShoppingServer().listen(Number(process.env.PORT) || 8789, '0.0.0.0', () => console.log('FitCheck shopping server started.'));
 }
 module.exports = { createShoppingServer };

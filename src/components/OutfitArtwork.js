@@ -1,3 +1,4 @@
+import { itemImageSource } from '../features/collections/photoSource';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Path } from 'react-native-svg';
@@ -6,7 +7,7 @@ import Svg, { Circle, G, Path } from 'react-native-svg';
 function Garment({ item }) {
   const [failedUri, setFailedUri] = useState('');
   if (item.photoUri && failedUri !== item.photoUri) {
-    return <Image source={{ uri: item.photoUri }} resizeMode="contain" style={styles.photo}
+    return <Image source={itemImageSource(item.photoUri)} resizeMode="contain" style={styles.photo}
       accessibilityLabel={item.name} onError={() => setFailedUri(item.photoUri)} />;
   }
   const color = /^#[0-9a-f]{6}$/i.test(item.colorHex || '') ? item.colorHex : '#A9ADA3';
@@ -23,6 +24,8 @@ function Garment({ item }) {
       <Path d="M30 19 H90 M60 20 V47 M31 24 Q43 44 47 24 M89 24 Q77 44 73 24" stroke={seam} fill="none" />
       <Circle cx="60" cy="15" r="1.5" fill={seam} />
     </>;
+  } else if (item.category === 'onepiece') {
+    shape = <><Path d={name.includes('suit') ? 'M35 12 L60 21 L85 12 L106 65 L87 74 L80 48 L85 88 L91 143 H65 L60 100 L55 143 H29 L35 88 L40 48 L33 74 L14 65 Z' : 'M39 14 L52 24 H68 L81 14 L93 49 L79 59 L104 139 Q60 149 16 139 L41 59 L27 49 Z'} fill={color} stroke={seam} /><Path d="M41 59 H79 M60 25 V85" fill="none" stroke={seam} /></>;
   } else if (item.category === 'shoes') {
     const boot = name.includes('boot');
     shape = <G transform="translate(0 28)">
@@ -66,6 +69,7 @@ const styles = StyleSheet.create({
   garment: { position: 'absolute', width: '48%', height: '56%' },
   top: { left: '3%', top: '4%', transform: [{ rotate: '-9deg' }] },
   topSolo: { width: '56%', height: '61%', left: '1%' },
+  onepiece: { right: '10%', top: '3%', width: '58%', height: '84%', transform: [{ rotate: '5deg' }] },
   bottom: { right: '2%', bottom: '5%', height: '65%', transform: [{ rotate: '7deg' }] },
   layer: { right: '1%', top: '2%', width: '46%', height: '51%', transform: [{ rotate: '9deg' }] },
   shoes: { left: '4%', bottom: '7%', width: '46%', height: '33%', transform: [{ rotate: '-13deg' }] },

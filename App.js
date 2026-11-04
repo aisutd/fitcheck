@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import { persistConfirmedProfile } from './src/features/quiz/commitProfile';
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import {
   createBlankAnswers,
@@ -46,13 +47,18 @@ const loadingStyles = StyleSheet.create({
   label: { color: '#6C7771', fontSize: 13 },
 });
 
-export default function App() {
-  const [screen, setScreen] = useState('suggest');
+const FitCheckContext = createContext(null);
+export function useFitCheck() { return useContext(FitCheckContext); }
+
+export function FitCheckProvider({ children }) {
+  const setScreen = (next) => next === 'suggest' ? router.replace('/') : router.push('/' + next);
   const [draft, setDraft] = useState(null);
   const [profile, setProfile] = useState(null);
   const [storageError, setStorageError] = useState('');
   const [storageReady, setStorageReady] = useState(false);
   const [wardrobeState, setWardrobeState] = useState(createEmptyWardrobeState);
+  const wardrobeRef = useRef(wardrobeState);
+  const wardrobeWrites = useRef(Promise.resolve());
   const [wardrobeError, setWardrobeError] = useState('');
   const [wardrobeReady, setWardrobeReady] = useState(false);
   const [avatarCustomization, setAvatarCustomization] = useState(DEFAULT_AVATAR_CUSTOMIZATION);
@@ -76,6 +82,7 @@ export default function App() {
           setStorageReady(false);
         }
         if (wardrobeResult.status === 'fulfilled') {
+          wardrobeRef.current = wardrobeResult.value.state;
           setWardrobeState(wardrobeResult.value.state);
           setWardrobeError(wardrobeResult.value.cleanupWarning);
           setWardrobeReady(true);
@@ -166,15 +173,21 @@ export default function App() {
     }
   }
 
-  async function persistWardrobe(nextState) {
-    try {
-      await saveWardrobeState(nextState);
-      setWardrobeState(nextState);
-      setWardrobeError('');
-    } catch (error) {
-      setWardrobeError(`Wardrobe changes could not be saved: ${error.message}`);
-      throw error;
-    }
+  function persistWardrobe(update) {
+    const operation = wardrobeWrites.current.then(async () => {
+      try {
+        const nextState = typeof update === 'function' ? update(wardrobeRef.current) : update;
+        await saveWardrobeState(nextState);
+        wardrobeRef.current = nextState;
+        setWardrobeState(nextState);
+        setWardrobeError('');
+      } catch (error) {
+        setWardrobeError(`Wardrobe changes could not be saved: ${error.message}`);
+        throw error;
+      }
+    });
+    wardrobeWrites.current = operation.catch(() => {});
+    return operation;
   }
 
   async function persistAvatarCustomization(nextCustomization) {
@@ -188,6 +201,12 @@ export default function App() {
     }
   }
 
+  return <FitCheckContext.Provider value={{ setScreen, draft, profile, storageError, storageReady, wardrobeState, wardrobeError, wardrobeReady, avatarCustomization, avatarError, avatarReady, loading, setLoading, setLoadAttempt, openQuiz, persistWardrobe, persistAvatarCustomization, exitQuiz, commitProfile, cancelProfileEdit, persistDraft }}>{children}</FitCheckContext.Provider>;
+}
+
+export default function App({ activeScreen = 'suggest' }) {
+  const screen = activeScreen;
+  const { setScreen, draft, profile, storageError, storageReady, wardrobeState, wardrobeError, wardrobeReady, avatarCustomization, avatarError, avatarReady, loading, setLoading, setLoadAttempt, openQuiz, persistWardrobe, persistAvatarCustomization, exitQuiz, commitProfile, cancelProfileEdit, persistDraft } = useFitCheck();
   if (loading) {
     return <AppLoadingScreen />;
   }

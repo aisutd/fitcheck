@@ -1,6 +1,6 @@
 const WARDROBE_SCHEMA_VERSION = 1;
 const RECOVERY_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
-const WARDROBE_CATEGORIES = ['top', 'bottom', 'shoes', 'layer', 'accessory'];
+const WARDROBE_CATEGORIES = ['top', 'bottom', 'shoes', 'layer', 'accessory', 'onepiece'];
 const { OCCASIONS } = require('../suggest/occasions');
 
 function createEmptyWardrobeState() {
@@ -9,6 +9,7 @@ function createEmptyWardrobeState() {
     mode: 'personal',
     personalItems: [],
     recentlyDeleted: [],
+    wishlistItems: [],
     demoAvailability: {},
   };
 }
@@ -40,6 +41,7 @@ function isWardrobeState(state) {
     ['personal', 'demo'].includes(state.mode) &&
     Array.isArray(state.personalItems) &&
     state.personalItems.every(isWardrobeItem) &&
+    (state.wishlistItems === undefined || (Array.isArray(state.wishlistItems) && state.wishlistItems.every(isWardrobeItem))) &&
     Array.isArray(state.recentlyDeleted) &&
     state.recentlyDeleted.every(
       (item) =>

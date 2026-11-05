@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+const { resolveRenderQuality, renderSettings } = require('../src/features/avatar/renderQuality');
+assert.equal(resolveRenderQuality('auto'), 'low');
+assert.equal(resolveRenderQuality('auto', 2048, 100), 'low');
+assert.equal(resolveRenderQuality('auto', 8192, 3000), 'low');
+assert.equal(resolveRenderQuality('auto', 8192, 500), 'standard');
+assert.equal(resolveRenderQuality('low', 8192, 500), 'low');
+assert.equal(resolveRenderQuality('standard', 2048, 3000), 'standard');
+assert.ok(renderSettings('low').dpr < renderSettings('standard').dpr);
+assert.ok(renderSettings('low').segments < renderSettings('standard').segments);
+console.log('Passed 8 adaptive render quality checks.');

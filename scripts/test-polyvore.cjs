@@ -1,0 +1,13 @@
+const assert = require('node:assert/strict');
+const { trainCategoryModel, categoryCompatibility, rocAuc } = require('../src/features/evaluation/polyvoreCompatibility');
+const train = [{ items: [{ categoryid: 1 }, { categoryid: 2 }] }, { items: [{ categoryid: 1 }, { categoryid: 2 }] }, { items: [{ categoryid: 3 }, { categoryid: 4 }] }];
+const model = trainCategoryModel(train);
+assert.ok(categoryCompatibility([1, 2], model) > categoryCompatibility([1, 4], model));
+assert.equal(categoryCompatibility([1, 1], model), null);
+assert.equal(categoryCompatibility([999, 998], model), null, 'unseen categories cannot create unsupported compatibility scores');
+assert.equal(categoryCompatibility([2, 1], model), categoryCompatibility([1, 2], model));
+assert.equal(rocAuc([{ label: 1, score: 1 }, { label: 0, score: 0 }]), 1);
+assert.equal(rocAuc([{ label: 1, score: 0 }, { label: 0, score: 1 }]), 0);
+assert.equal(rocAuc([{ label: 1, score: 0 }, { label: 0, score: 0 }]), 0.5);
+assert.equal(rocAuc([{ label: 1, score: 0 }]), null);
+console.log('Passed category-compatibility scoring and tied-rank AUC checks.');

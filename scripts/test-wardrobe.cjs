@@ -6,6 +6,7 @@ const {
   createEmptyWardrobeState,
   filterWardrobeItems,
   getActiveWardrobeItems,
+  getWardrobeEntryError,
   isWardrobeState,
   moveToRecentlyDeleted,
   permanentlyDeleteItem,
@@ -142,5 +143,18 @@ state = moveToRecentlyDeleted(state, 'top-linen');
 state = permanentlyDeleteItem(state, 'top-linen');
 check(state.recentlyDeleted.length === 0, 'permanent deletion removes a Recently Deleted record');
 check(OCCASIONS.length === 5, 'wardrobe occasion options stay aligned with Suggest');
+
+// Existing untagged records remain readable, but new edits must be outfit-ready.
+const untagged = fixture({ occasions: [] });
+const legacy = addPersonalItem(createEmptyWardrobeState(), untagged);
+check(isWardrobeState(legacy), 'untagged existing wardrobe data remains valid');
+check(Boolean(getWardrobeEntryError(untagged)), 'saving without an occasion gives actionable validation');
+check(Boolean(getWardrobeEntryError(fixture({ occasions: ['Unknown'] }))), 'invalid occasions cannot be saved');
+const { generateRecommendations } = require('../src/features/suggest/outfitRecommendations');
+check(generateRecommendations('Work', legacy.personalItems).recommendations.length === 0, 'untagged pieces are not silently assigned an occasion');
+const repaired = updatePersonalItem(legacy, fixture({ occasions: ['Work'] }));
+check(getWardrobeEntryError(repaired.personalItems[0]) === '', 'tagging a saved piece makes the edit valid');
+check(generateRecommendations('Work', repaired.personalItems).recommendations.some(outfit => outfit.items.some(item => item.id === untagged.id)), 'tagged piece flows into matching recommendations');
+check(generateRecommendations('Gym', repaired.personalItems).recommendations.length === 0, 'tagging Work does not include the piece in Gym outfits');
 
 console.log(`Passed ${checks} wardrobe CRUD, isolation, recovery, and filter checks.`);

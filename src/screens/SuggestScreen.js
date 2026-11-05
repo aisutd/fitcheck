@@ -64,6 +64,8 @@ export default function SuggestScreen({
       : WARDROBE,
     [wardrobeState, wardrobeMode],
   );
+  const untaggedItems = wardrobeMode === 'personal'
+    ? fullWardrobe.filter((item) => item.available !== false && !item.occasions?.length) : [];
   const [occasion, setOccasion] = useState('Work');
   const [weatherCondition, setWeatherCondition] = useState('');
   const initialVariety = {
@@ -307,6 +309,14 @@ export default function SuggestScreen({
             </View>
           </View> : null}
 
+          {untaggedItems.length ? <View style={styles.guidanceCard}>
+            <Text style={styles.guidanceTitle}>Your clothes need an occasion.</Text>
+            <Text style={styles.guidanceMessage}>These available pieces are saved, but cannot appear in outfits until you choose when you wear them.</Text>
+            {untaggedItems.map((item) => <Pressable key={item.id} accessibilityRole="button" onPress={() => onOpenWardrobe({ itemId: item.id })} style={styles.addMissingButton}>
+              <Text style={styles.addMissingText}>Set occasions for {item.name}</Text><Text style={styles.addMissingArrow}>→</Text>
+            </Pressable>)}
+          </View> : null}
+
           {result.message ? (
             <View style={styles.guidanceCard}>
               <Text style={styles.guidanceTitle}>
@@ -326,9 +336,9 @@ export default function SuggestScreen({
                 </Text>
               ) : null}
               {result.missingCategories?.length ? (
-                <Pressable accessibilityRole="button" onPress={onOpenWardrobe} style={styles.addMissingButton}>
+                <Pressable accessibilityRole="button" onPress={() => onOpenWardrobe(wardrobeMode === 'personal' && result.missingCategories?.length ? { category: result.missingCategories[0].id, occasion } : null)} style={styles.addMissingButton}>
                   <Text style={styles.addMissingText}>
-                    {wardrobeMode === 'demo' ? 'Review demo wardrobe' : 'Add missing clothing'}
+                    {wardrobeMode === 'demo' ? 'Review demo wardrobe' : `Add ${result.missingCategories[0].label} for ${occasion}`}
                   </Text>
                   <Text style={styles.addMissingArrow}>→</Text>
                 </Pressable>
@@ -336,7 +346,7 @@ export default function SuggestScreen({
             </View>
           ) : null}
 
-          <Text accessibilityLiveRegion="polite" style={styles.swapNotice}>{swapNotice || 'Make it yours. Tap any piece to see alternatives.'}</Text>
+          {result.recommendations.length ? <Text accessibilityLiveRegion="polite" style={styles.swapNotice}>{swapNotice || 'Make it yours. Tap any piece to see alternatives.'}</Text> : null}
           {result.recommendations.length > 0 ? (
             <View style={styles.outfitGrid}>{outfits.map((recommendation) => (
               <View key={recommendation.cardId || recommendation.items.map((item) => item.id).join('|')} style={[styles.outfitCard, width >= 1000 && styles.outfitCardWide]}>
@@ -507,16 +517,16 @@ export default function SuggestScreen({
                 </View> : null}
               </View>
             ))}</View>
-          ) : (
+          ) : !result.message ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No outfit components found.</Text>
               <Text style={styles.emptyMessage}>{result.message}</Text>
-              <Pressable accessibilityRole="button" onPress={onOpenWardrobe} style={styles.addMissingButton}>
+              <Pressable accessibilityRole="button" onPress={() => onOpenWardrobe(wardrobeMode === 'personal' && result.missingCategories?.length ? { category: result.missingCategories[0].id, occasion } : null)} style={styles.addMissingButton}>
                 <Text style={styles.addMissingText}>Open wardrobe</Text>
                 <Text style={styles.addMissingArrow}>→</Text>
               </Pressable>
             </View>
-          )}
+          ) : null}
 
           {result.recommendations.length ? (
             <Pressable

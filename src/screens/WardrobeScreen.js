@@ -27,6 +27,7 @@ import {
   setItemAvailability,
   setWardrobeMode,
   updatePersonalItem,
+  getWardrobeEntryError,
 } from '../features/wardrobe/wardrobeModel';
 import {
   deleteWardrobePhoto,
@@ -64,6 +65,31 @@ const COLORS = {
 
 function createItemId() {
   return `item-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function blankItem(request = {}) {
+  return {
+    id: createItemId(),
+    name: '',
+    category: WARDROBE_CATEGORIES.includes(request.category) ? request.category : 'top',
+    clothingType: '',
+    color: '',
+    colorFamily: '',
+    colorHex: '',
+    fit: '',
+    size: '',
+    sizeSystem: '',
+    styleTags: [],
+    seasons: [],
+    weatherTags: [],
+    weatherNotes: '',
+    waterproof: false,
+    occasions: OCCASIONS.includes(request.occasion) ? [request.occasion] : [],
+    available: true,
+    photoUri: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 function toggleValue(values, value) {
@@ -152,6 +178,7 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
             .join(' · ')}
         </Text>
         {item.size ? <Text style={styles.itemMeta}>Size {item.size}{item.sizeSystem ? ` · ${item.sizeSystem}` : ''}</Text> : null}
+        {mode === 'personal' && !item.occasions?.length ? <Text style={styles.missingPhotoText}>Choose an occasion in Edit to include this piece in outfits.</Text> : null}
         {mode === 'demo' ? <Text style={styles.demoLabel}>DEMO EXAMPLE · CATEGORY ILLUSTRATION</Text> : !item.photoUri ? <Text style={styles.demoLabel}>CATEGORY ILLUSTRATION</Text> : null}
         <View style={styles.itemActions}>
           <ActionButton
@@ -175,6 +202,8 @@ export default function WardrobeScreen({
   wardrobeState,
   storageError = '',
   onWardrobeChange,
+  initialRequest = null,
+  onShowOutfits,
 }) {
   const { mode } = wardrobeState;
   const demoItems = DEMO_ITEMS.map((item) => ({
@@ -182,7 +211,11 @@ export default function WardrobeScreen({
     available: wardrobeState.demoAvailability[item.id] ?? true,
   }));
   const allItems = mode === 'demo' ? demoItems : wardrobeState.personalItems;
-  const [view, setView] = useState('active');
+  const [initialItem] = useState(() => mode === 'personal' && initialRequest?.itemId
+    ? wardrobeState.personalItems.find((item) => item.id === initialRequest.itemId) : null);
+  const [initialForm] = useState(() => initialItem ? { ...initialItem, styleTags: initialItem.styleTags || [], seasons: initialItem.seasons || [], weatherTags: initialItem.weatherTags || [] }
+    : mode === 'personal' && initialRequest?.category ? blankItem(initialRequest) : null);
+  const [view, setView] = useState(initialForm ? 'edit' : 'active');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [colorFilter, setColorFilter] = useState('');
@@ -190,9 +223,10 @@ export default function WardrobeScreen({
   const [typeFilter, setTypeFilter] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState(null);
   const [sort, setSort] = useState('recent');
-  const [editingItem, setEditingItem] = useState(null);
-  const [form, setForm] = useState(null);
-  const [photoDraftUri, setPhotoDraftUri] = useState('');
+  const [editingItem, setEditingItem] = useState(initialItem);
+  const [form, setForm] = useState(initialForm);
+  const [photoDraftUri, setPhotoDraftUri] = useState(initialItem?.photoUri || '');
+  const [savedMessage, setSavedMessage] = useState('');
   const [photoChanged, setPhotoChanged] = useState(false);
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -213,28 +247,8 @@ export default function WardrobeScreen({
 
   function openNewItem() {
     setEditingItem(null);
-    setForm({
-      id: createItemId(),
-      name: '',
-      category: 'top',
-      clothingType: '',
-      color: '',
-      colorFamily: '',
-      colorHex: '',
-      fit: '',
-      size: '',
-      sizeSystem: '',
-      styleTags: [],
-      seasons: [],
-      weatherTags: [],
-      weatherNotes: '',
-      waterproof: false,
-      occasions: [],
-      available: true,
-      photoUri: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    setSavedMessage('');
+    setForm(blankItem());
     setPhotoDraftUri('');
     setPhotoChanged(false);
     setFormError('');
@@ -324,8 +338,9 @@ export default function WardrobeScreen({
   }
 
   async function saveItem() {
-    if (!form?.name.trim()) {
-      setFormError('Add a name for this clothing item.');
+    const entryError = getWardrobeEntryError(form);
+    if (entryError) {
+      setFormError(entryError);
       return;
     }
     setBusy(true);
@@ -362,6 +377,7 @@ export default function WardrobeScreen({
       }
       setMissingPhotos((current) => current.filter((id) => id !== item.id));
       closeForm();
+      setSavedMessage(item.available ? `${item.name} is ready for ${item.occasions.join(', ')} outfit suggestions.` : `${item.name} is saved. Mark it available when you want it in outfit suggestions.`);
     } catch (error) {
       if (newPhotoUri) {
         try {
@@ -533,10 +549,15 @@ export default function WardrobeScreen({
           {storageError ? <Text accessibilityRole="alert" style={styles.errorBanner}>{storageError}</Text> : null}
           {notice ? <Text accessibilityRole="alert" style={styles.notice}>{notice}</Text> : null}
 
+          {savedMessage && view === 'active' ? <View style={styles.savedCard}>
+            <Text accessibilityLiveRegion="polite" style={styles.subtitle}>{savedMessage}</Text>
+            <ActionButton title="View outfits" onPress={onShowOutfits} />
+          </View> : null}
+
           {view === 'edit' && form ? (
             <View style={styles.form}>
               <Text style={styles.formIntro}>
-                Name and category are required. Every other detail is optional.
+                Add a name, category, and at least one occasion so this piece can appear in your outfit suggestions. Everything else is optional.
               </Text>
               <Text style={styles.formLabel}>Item name *</Text>
               <TextInput
@@ -559,6 +580,13 @@ export default function WardrobeScreen({
                 )}
               />
 
+              <ChoiceRow
+                label="Wear it for *"
+                values={OCCASIONS}
+                selected={form.occasions}
+                multi
+                onSelect={(value) => toggleFormList('occasions', value)}
+              />
               <Text style={styles.formLabel}>Clothing type</Text>
               <TextInput
                 accessibilityLabel="Clothing type, optional"
@@ -625,13 +653,6 @@ export default function WardrobeScreen({
                 selected={form.seasons}
                 multi
                 onSelect={(value) => toggleFormList('seasons', value)}
-              />
-              <ChoiceRow
-                label="Suitable occasions · optional"
-                values={OCCASIONS}
-                selected={form.occasions}
-                multi
-                onSelect={(value) => toggleFormList('occasions', value)}
               />
               <ChoiceRow
                 label="Conditions · only when known"
@@ -872,6 +893,7 @@ export default function WardrobeScreen({
 }
 
 const styles = StyleSheet.create({
+  savedCard: { padding: 14, gap: 10, marginBottom: 16, backgroundColor: palette.soft },
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { flexGrow: 1, paddingBottom: 30 },
   content: { width: '100%', maxWidth: 900, alignSelf: 'center', paddingHorizontal: 20 },

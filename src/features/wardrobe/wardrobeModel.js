@@ -13,6 +13,14 @@ function createEmptyWardrobeState() {
   };
 }
 
+// Validate new edits without invalidating older saved clothing records.
+function getWardrobeEntryError(item) {
+  if (!item?.name?.trim()) return 'Add a name for this clothing item.';
+  if (!WARDROBE_CATEGORIES.includes(item.category)) return 'Choose a clothing category.';
+  if (!item.occasions?.length || !item.occasions.every((occasion) => OCCASIONS.includes(occasion))) return 'Choose at least one occasion so this piece can appear in outfit suggestions.';
+  return '';
+}
+
 function isWardrobeItem(item) {
   return Boolean(
     item &&
@@ -194,6 +202,7 @@ function filterWardrobeItems(items, filters = {}) {
 }
 
 module.exports = {
+  getWardrobeEntryError,
   OCCASIONS,
   RECOVERY_PERIOD_MS,
   WARDROBE_CATEGORIES,

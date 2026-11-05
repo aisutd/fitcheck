@@ -52,6 +52,12 @@ const setScreen = (screen) => router.navigate(screen === 'suggest' ? '/' : `/${s
 
 export function FitCheckProvider({ children }) {
   const [quizSession, setQuizSession] = useState(0);
+  const [wardrobeRequest, setWardrobeRequest] = useState(null);
+  function openWardrobe(request = null) {
+    if (!wardrobeReady) return;
+    setWardrobeRequest(request ? { ...request, key: Date.now() } : null);
+    setScreen('wardrobe');
+  }
   const [draft, setDraft] = useState(null);
   const [profile, setProfile] = useState(null);
   const [storageError, setStorageError] = useState('');
@@ -194,11 +200,11 @@ export function FitCheckProvider({ children }) {
     }
   }
 
-  return <FitCheckContext.Provider value={{ draft, profile, storageError, storageReady, wardrobeState, wardrobeError, wardrobeReady, avatarCustomization, avatarError, avatarReady, loading, quizSession, persistDraft, openQuiz, exitQuiz, commitProfile, cancelProfileEdit, persistWardrobe, persistAvatarCustomization, setLoading, setLoadAttempt }}>{children}</FitCheckContext.Provider>;
+  return <FitCheckContext.Provider value={{ wardrobeRequest, openWardrobe, draft, profile, storageError, storageReady, wardrobeState, wardrobeError, wardrobeReady, avatarCustomization, avatarError, avatarReady, loading, quizSession, persistDraft, openQuiz, exitQuiz, commitProfile, cancelProfileEdit, persistWardrobe, persistAvatarCustomization, setLoading, setLoadAttempt }}>{children}</FitCheckContext.Provider>;
 }
 
 export function MainScreen({ screen }) {
-  const { draft, profile, storageError, storageReady, wardrobeState, wardrobeError, wardrobeReady, avatarCustomization, avatarError, avatarReady, loading, quizSession, persistDraft, openQuiz, exitQuiz, commitProfile, cancelProfileEdit, persistWardrobe, persistAvatarCustomization, setLoading, setLoadAttempt } = useFitCheck();
+  const { wardrobeRequest, openWardrobe, draft, profile, storageError, storageReady, wardrobeState, wardrobeError, wardrobeReady, avatarCustomization, avatarError, avatarReady, loading, quizSession, persistDraft, openQuiz, exitQuiz, commitProfile, cancelProfileEdit, persistWardrobe, persistAvatarCustomization, setLoading, setLoadAttempt } = useFitCheck();
   if (loading) {
     return <AppLoadingScreen />;
   }
@@ -206,6 +212,9 @@ export function MainScreen({ screen }) {
   if (screen === 'wardrobe' && wardrobeReady) {
     return (
       <WardrobeScreen
+        key={wardrobeRequest?.key || 'wardrobe'}
+        initialRequest={wardrobeRequest}
+        onShowOutfits={() => setScreen('suggest')}
         wardrobeState={wardrobeState}
         storageError={wardrobeError}
         onWardrobeChange={persistWardrobe}
@@ -255,9 +264,7 @@ export function MainScreen({ screen }) {
       wardrobeReady={wardrobeReady}
       wardrobeState={wardrobeState}
       onOpenQuiz={openQuiz}
-      onOpenWardrobe={() => {
-        if (wardrobeReady) setScreen('wardrobe');
-      }}
+      onOpenWardrobe={openWardrobe}
       avatarReady={avatarReady}
       avatarError={avatarError}
       onOpenAvatarStudio={() => {

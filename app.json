@@ -14,7 +14,8 @@
           "cameraPermission": "FitCheck uses the camera only when you choose to photograph clothing.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-router"
     ],
     "ios": {
       "supportsTablet": true
@@ -28,7 +29,9 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "scheme": "fitcheck"
   }
 }

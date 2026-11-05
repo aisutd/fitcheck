@@ -1,8 +1,11 @@
+import GarmentIllustration from '../components/GarmentIllustration';
+import { palette } from '../theme/tokens';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
 import {
+  useWindowDimensions,
+  Modal,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +13,7 @@ import {
 } from 'react-native';
 
 const { OCCASIONS, WARDROBE, generateRecommendations } = require('../features/suggest/outfitRecommendations');
+const { getSwapChoices, applyOutfitSwaps } = require('../features/suggest/outfitSwaps');
 const { getActiveWardrobeItems } = require('../features/wardrobe/wardrobeModel');
 
 const OCCASION_NOTES = {
@@ -35,13 +39,13 @@ export default function SuggestScreen({
   storageReady = true,
   wardrobeReady = true,
   wardrobeState = null,
-  avatarReady = false,
-  avatarError = '',
   onOpenQuiz = () => {},
   onOpenWardrobe = () => {},
-  onOpenAvatarStudio = () => {},
   onRetryStorage = () => {},
 }) {
+  const { width } = useWindowDimensions();
+  const [refining, setRefining] = useState(false);
+  const [expandedOutfit, setExpandedOutfit] = useState('');
   const wardrobeMode = wardrobeState?.mode || 'personal';
   const activeWardrobe = useMemo(
     () => wardrobeState
@@ -81,13 +85,45 @@ export default function SuggestScreen({
     [occasion, activeWardrobe, profile, variety, weatherCondition, shownSignatures, fullWardrobe, wardrobeState],
   );
 
+  const [swaps, setSwaps] = useState({});
+  const [picker, setPicker] = useState(null);
+  const [swapNotice, setSwapNotice] = useState('');
+  const swapKey = (cardId) => `${wardrobeMode}:${occasion}:${cardId}`;
+  const outfits = result.recommendations.map((base) =>
+    applyOutfitSwaps(base, swaps[swapKey(base.signature)], activeWardrobe, profile, weatherCondition));
+  const pickedOutfit = picker && outfits.find((outfit) => outfit.cardId === picker.cardId);
+  const pickedItem = pickedOutfit?.items.find((item) => item.category === picker?.category);
+  const choices = pickedItem ? getSwapChoices(activeWardrobe, occasion, picker.category) : [];
+
+  function openPicker(outfit, item) {
+    setPicker({ cardId: outfit.cardId, category: item.category });
+  }
+  function chooseReplacement(item) {
+    if (!pickedOutfit || !choices.some((choice) => choice.id === item.id)) return;
+    const key = swapKey(pickedOutfit.cardId);
+    setSwaps((current) => ({ ...current, [key]: { ...current[key], [item.category]: item.id } }));
+    setSwapNotice(`${item.name} selected. Other pieces kept in place.`);
+    setPicker(null);
+  }
+  function resetOutfit(outfit) {
+    const key = swapKey(outfit.cardId);
+    setSwaps((current) => { const next = { ...current }; delete next[key]; return next; });
+    setSwapNotice('Outfit reset to the original recommendation.');
+  }
+
   function selectOccasion(nextOccasion) {
+    setSwaps({});
+    setPicker(null);
+    setSwapNotice('');
     setOccasion(nextOccasion);
     setShownSignatures([]);
     setExpandedExplanation('');
   }
 
   function generateAnotherThree() {
+    setSwaps({});
+    setPicker(null);
+    setSwapNotice('');
     if (!result.recommendations.length) return;
     if (!result.moreAvailable) {
       setShownSignatures([]);
@@ -99,12 +135,18 @@ export default function SuggestScreen({
   }
 
   function changeVariety(nextVariety) {
+    setSwaps({});
+    setPicker(null);
+    setSwapNotice('');
     setVariety(nextVariety);
     setShownSignatures([]);
     setExpandedExplanation('');
   }
 
   function changeWeather(nextCondition) {
+    setSwaps({});
+    setPicker(null);
+    setSwapNotice('');
     setWeatherCondition(nextCondition);
     setShownSignatures([]);
     setExpandedExplanation('');
@@ -120,37 +162,17 @@ export default function SuggestScreen({
     : profile
       ? 'Your style profile is saved on this device.'
       : 'Ten thoughtful questions. A more personal FitCheck.';
-  const wardrobeDescription = wardrobeMode === 'demo'
-    ? 'Browsing clearly labeled sample pieces. Your personal closet stays separate.'
-    : `${wardrobeState?.personalItems?.length || 0} personal pieces saved on this device.`;
+
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <View style={styles.topBar}>
-            <View style={styles.brandGroup}>
-              <View style={styles.brandMark}>
-                <Text style={styles.brandMarkText}>FC</Text>
-              </View>
-              <View>
-                <Text style={styles.brandName}>FITCHECK</Text>
-                <Text style={styles.brandCaption}>PERSONAL STYLE</Text>
-              </View>
-            </View>
-            <View style={styles.wardrobeLabel}>
-              <View style={styles.wardrobeDot} />
-              <Text style={styles.wardrobeText}>
-                {wardrobeMode === 'demo' ? 'DEMO MODE' : 'PERSONAL WARDROBE'}
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.hero}>
-            <Text style={styles.eyebrow}>THE DAILY EDIT</Text>
+            <Text style={styles.eyebrow}>YOUR CLOSET. NEW POSSIBILITIES.</Text>
             <Text style={styles.title}>
-              Style Your{'\n'}Day<Text style={styles.titlePeriod}>.</Text>
+              Good outfits.{'\n'}Less effort<Text style={styles.titlePeriod}>.</Text>
             </Text>
             <Text style={styles.subtitle}>
               {wardrobeMode === 'demo'
@@ -198,60 +220,8 @@ export default function SuggestScreen({
             <Text style={styles.quizArrow}>→</Text>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityHint="Add, edit, search, or organize clothing in Personal or Demo Mode"
-            accessibilityState={{ disabled: !wardrobeReady }}
-            disabled={!wardrobeReady}
-            onPress={onOpenWardrobe}
-            style={({ pressed }) => [
-              styles.quizCard,
-              !wardrobeReady && styles.quizCardDisabled,
-              pressed && wardrobeReady && styles.quizCardPressed,
-            ]}
-          >
-            <View style={styles.quizCardCopy}>
-              <Text style={styles.quizEyebrow}>WARDROBE · {wardrobeMode.toUpperCase()} MODE</Text>
-              <Text style={styles.quizTitle}>
-                {wardrobeReady ? 'Manage your wardrobe' : 'Wardrobe unavailable'}
-              </Text>
-              <Text style={styles.quizDescription}>
-                {wardrobeReady ? wardrobeDescription : 'Retry local storage to open your wardrobe.'}
-              </Text>
-            </View>
-            <Text style={styles.quizArrow}>→</Text>
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityHint={avatarReady
-              ? 'Open your interactive 3D avatar and customization controls'
-              : 'Unavailable until local avatar settings can be read'}
-            accessibilityState={{ disabled: !avatarReady }}
-            disabled={!avatarReady}
-            onPress={onOpenAvatarStudio}
-            style={({ pressed }) => [
-              styles.quizCard,
-              !avatarReady && styles.quizCardDisabled,
-              pressed && avatarReady && styles.quizCardPressed,
-            ]}
-          >
-            <View style={styles.quizCardCopy}>
-              <Text style={styles.quizEyebrow}>YOUR 3D AVATAR</Text>
-              <Text style={styles.quizTitle}>
-                {avatarReady ? 'Open Avatar Studio' : 'Avatar settings unavailable'}
-              </Text>
-              <Text style={styles.quizDescription}>
-                {avatarReady
-                  ? 'Customize your look, turn the model, and save changes on this device.'
-                  : avatarError || 'Retry local storage to open Avatar Studio.'}
-              </Text>
-            </View>
-            <Text style={styles.quizArrow}>→</Text>
-          </Pressable>
-
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionLabel}>WHAT'S THE OCCASION?</Text>
+            <Text style={styles.sectionLabel}>Dress for your day</Text>
             <Text style={styles.sectionCount}>{OCCASION_INDEX[occasion]} / 05</Text>
           </View>
 
@@ -284,7 +254,10 @@ export default function SuggestScreen({
             </View>
           </View>
 
-          <View style={styles.controlsCard}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: refining }} onPress={() => setRefining(!refining)} style={styles.refineButton}>
+            <Text style={styles.refineText}>{refining ? 'Close refinements −' : 'Refine your edit +'}{weatherCondition ? ` · ${weatherCondition}` : ''}</Text>
+          </Pressable>
+          {refining ? <View style={styles.controlsCard}>
             <Text style={styles.controlLabel}>OUTFIT VARIETY</Text>
             <View style={styles.controlChoices}>
               {[
@@ -332,7 +305,7 @@ export default function SuggestScreen({
                 </Pressable>
               ))}
             </View>
-          </View>
+          </View> : null}
 
           {result.message ? (
             <View style={styles.guidanceCard}>
@@ -363,13 +336,31 @@ export default function SuggestScreen({
             </View>
           ) : null}
 
+          <Text accessibilityLiveRegion="polite" style={styles.swapNotice}>{swapNotice || 'Make it yours. Tap any piece to see alternatives.'}</Text>
           {result.recommendations.length > 0 ? (
-            result.recommendations.map((recommendation) => (
-              <View key={recommendation.signature || recommendation.items.map((item) => item.id).join('|')} style={styles.outfitCard}>
+            <View style={styles.outfitGrid}>{outfits.map((recommendation) => (
+              <View key={recommendation.cardId || recommendation.items.map((item) => item.id).join('|')} style={[styles.outfitCard, width >= 1000 && styles.outfitCardWide]}>
+                <View style={styles.illustrationPanel}>
+                  <Text style={styles.illustrationEyebrow}>
+                    {recommendation.rank === 1 ? '01 / THE TOP PICK' : `${String(recommendation.rank).padStart(2, '0')} / THE EDIT`}
+                  </Text>
+                  <View style={styles.illustrationItems}>
+                    {recommendation.items.map((item) => {
+                      const position = { top: [0, 0], bottom: [1, 0], shoes: [0, 1], layer: [1, 1] }[item.category];
+                      if (!position) return null;
+                      return (
+                        <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Swap ${item.category}: ${item.name}`} onPress={() => openPicker(recommendation, item)} style={[styles.illustrationItem, styles[`illustration_${item.category}`]]}>
+                          <GarmentIllustration category={item.category} colorHex={item.colorHex} photoUri={item.photoUri} />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <Text style={styles.illustrationDisclaimer}>Tap a piece to swap · illustrations approximate shape</Text>
+                </View>
                 <View style={styles.featureCard}>
                   <View style={styles.featureTopLine}>
                     <Text style={styles.featureEyebrow}>
-                      {recommendation.rank === 1 ? 'FITCHECK PICK' : `OUTFIT ${recommendation.rank}`}
+                      {recommendation.customized ? 'YOUR CUSTOM EDIT' : recommendation.rank === 1 ? 'FITCHECK PICK' : `OUTFIT ${recommendation.rank}`}
                     </Text>
                     <View style={styles.readyBadge}>
                       <View style={styles.readyDot} />
@@ -393,7 +384,7 @@ export default function SuggestScreen({
                   </Text>
                   <View style={styles.paletteRow}>
                     {recommendation.items.map((item) => (
-                      <View key={item.id} style={styles.paletteItem}>
+                      <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Change ${item.category}: ${item.name}`} onPress={() => openPicker(recommendation, item)} style={styles.paletteItem}>
                         <View
                           style={[
                             styles.paletteSwatch,
@@ -401,20 +392,30 @@ export default function SuggestScreen({
                             item.colorHex === '#F4F4EF' && styles.lightSwatch,
                           ]}
                         />
-                        <Text style={styles.paletteLabel}>{item.category}</Text>
-                      </View>
+                        <Text style={styles.paletteLabel}>{item.category} ↻</Text>
+                      </Pressable>
                     ))}
                   </View>
                 </View>
 
+                {recommendation.customized ? <Pressable accessibilityRole="button" accessibilityLabel={`Reset outfit ${recommendation.rank}`} onPress={() => resetOutfit(recommendation)} style={styles.detailsButton}>
+                  <Text style={styles.refineText}>Reset outfit ↺</Text>
+                </Pressable> : null}
+                <Pressable accessibilityRole="button" accessibilityState={{ expanded: expandedOutfit === recommendation.cardId }} onPress={() => setExpandedOutfit(expandedOutfit === recommendation.cardId ? '' : recommendation.cardId)} style={styles.detailsButton}>
+                  <Text style={styles.refineText}>{expandedOutfit === recommendation.cardId ? 'Hide outfit details −' : 'Explore the pieces +'} </Text>
+                </Pressable>
+                {expandedOutfit === recommendation.cardId ? <View>
                 <View style={styles.piecesHeader}>
                   <Text style={styles.sectionLabel}>THE PIECES</Text>
                   <Text style={styles.pieceCount}>{recommendation.items.length} ITEMS</Text>
                 </View>
                 <View style={styles.pieceList}>
                   {recommendation.items.map((item, index) => (
-                    <View
+                    <Pressable
                       key={item.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Replace ${item.category}: ${item.name}`}
+                      onPress={() => openPicker(recommendation, item)}
                       style={[
                         styles.pieceRow,
                         index === recommendation.items.length - 1 && styles.lastPieceRow,
@@ -431,8 +432,8 @@ export default function SuggestScreen({
                         <Text style={styles.pieceCategory}>{item.category}</Text>
                         <Text style={styles.pieceName}>{item.name}</Text>
                       </View>
-                      <Text style={styles.pieceColor}>{item.color || 'Color not provided'}</Text>
-                    </View>
+                      <Text style={styles.pieceColor}>{item.color || 'Color not provided'} ↻</Text>
+                    </Pressable>
                   ))}
                   {REQUIRED_CATEGORY_LABELS
                     .filter(({ id }) => !recommendation.items.some((item) => item.category === id))
@@ -465,20 +466,20 @@ export default function SuggestScreen({
                   )}
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityState={{ expanded: expandedExplanation === recommendation.signature }}
+                    accessibilityState={{ expanded: expandedExplanation === recommendation.cardId }}
                     accessibilityHint="Shows the actual factors and weights used for this match"
                     onPress={() => setExpandedExplanation((current) =>
-                      current === recommendation.signature ? '' : recommendation.signature)}
+                      current === recommendation.cardId ? '' : recommendation.cardId)}
                     style={styles.whyButton}
                   >
                     <Text style={styles.whyButtonText}>
-                      {expandedExplanation === recommendation.signature ? 'Hide match details' : 'Why this outfit?'}
+                      {expandedExplanation === recommendation.cardId ? 'Hide match details' : 'Why this outfit?'}
                     </Text>
                     <Text style={styles.whyButtonArrow}>
-                      {expandedExplanation === recommendation.signature ? '−' : '+'}
+                      {expandedExplanation === recommendation.cardId ? '−' : '+'}
                     </Text>
                   </Pressable>
-                  {expandedExplanation === recommendation.signature ? (
+                  {expandedExplanation === recommendation.cardId ? (
                     <View style={styles.factorList}>
                       {recommendation.factors.length ? recommendation.factors.map((factor) => (
                         <View key={factor.id} style={styles.factorRow}>
@@ -503,8 +504,9 @@ export default function SuggestScreen({
                     </View>
                   ) : null}
                 </View>
+                </View> : null}
               </View>
-            ))
+            ))}</View>
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No outfit components found.</Text>
@@ -541,17 +543,39 @@ export default function SuggestScreen({
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      <Modal visible={Boolean(pickedItem)} transparent animationType="fade" onRequestClose={() => setPicker(null)}>
+        <View style={styles.pickerBackdrop}>
+          <View accessibilityViewIsModal style={styles.pickerPanel}>
+            <View style={styles.pickerHeader}>
+              <Text accessibilityRole="header" style={styles.pickerTitle}>Choose your {picker?.category}.</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close piece picker" onPress={() => setPicker(null)} style={styles.pickerClose}><Text>Close ×</Text></Pressable>
+            </View>
+            <Text style={styles.pickerSubtitle}>Available for {occasion} · the rest of your outfit stays in place.</Text>
+            <ScrollView style={styles.pickerList} keyboardShouldPersistTaps="handled">
+              {choices.map((item) => (
+                <Pressable key={item.id} accessibilityRole="radio" accessibilityState={{ checked: item.id === pickedItem?.id }} accessibilityLabel={`${item.name}, ${item.color || 'color unspecified'}`} onPress={() => chooseReplacement(item)} style={[styles.pickerChoice, item.id === pickedItem?.id && styles.pickerSelected]}>
+                  <View style={styles.pickerImage}><GarmentIllustration category={item.category} colorHex={item.colorHex} photoUri={item.photoUri} /></View>
+                  <View style={styles.pieceCopy}><Text style={styles.pieceName}>{item.name}</Text><Text style={styles.pickerSubtitle}>{item.color || 'Color unspecified'}</Text></View>
+                  <Text style={styles.pickerCheck}>{item.id === pickedItem?.id ? '✓' : '+'}</Text>
+                </Pressable>
+              ))}
+              {choices.length <= 1 ? <Text style={styles.pickerSubtitle}>No other available {picker?.category} pieces for {occasion}. Add more in Wardrobe to expand your choices.</Text> : null}
+            </ScrollView>
+            <Text style={styles.pickerSubtitle}>Swaps last for this session. Reset outfit restores the original pieces.</Text>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const colors = {
-  background: '#F1F4EF',
-  ink: '#202B27',
-  muted: '#6C7771',
-  green: '#27483C',
-  lime: '#D4EF87',
-  line: '#E2E8E1',
+  background: '#FCFBF9',
+  ink: '#151515',
+  muted: '#666666',
+  black: '#171717',
+  lavender: '#EDE5FF',
+  line: '#E5E5E5',
   white: '#FFFFFF',
 };
 
@@ -562,11 +586,37 @@ const REQUIRED_CATEGORY_LABELS = [
 ];
 
 const styles = StyleSheet.create({
+  illustrationPanel: { backgroundColor: '#F0EDE7', paddingVertical: 20, paddingHorizontal: 12 },
+  illustrationEyebrow: { color: colors.ink, fontSize: 10, letterSpacing: 1.5, fontWeight: '800', marginBottom: 18 },
+  illustrationItems: { width: '100%', maxWidth: 520, aspectRatio: 1, alignSelf: 'center' },
+  illustrationItem: { position: 'absolute', width: '54%', aspectRatio: 1 },
+  illustration_top: { left: '0%', top: '3%', zIndex: 3, transform: [{ rotate: '-7deg' }] },
+  illustration_bottom: { right: '5%', bottom: '0%', zIndex: 1 },
+  illustration_layer: { right: '0%', top: '0%', zIndex: 2, transform: [{ rotate: '6deg' }] },
+  illustration_shoes: { left: '4%', bottom: '1%', width: '38%', zIndex: 4, transform: [{ rotate: '-9deg' }] },
+  illustrationDisclaimer: { color: colors.muted, fontSize: 10, textAlign: 'center', marginTop: 12 },
+  swapNotice: { color: palette.accent, fontSize: 12, lineHeight: 18, marginBottom: 14 },
+  pickerBackdrop: { flex: 1, backgroundColor: '#00000066', alignItems: 'center', justifyContent: 'center', padding: 18 },
+  pickerPanel: { width: '100%', maxWidth: 520, maxHeight: '85%', backgroundColor: palette.background, padding: 20, borderRadius: 8 },
+  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  pickerTitle: { flex: 1, fontFamily: 'serif', fontSize: 28, color: palette.ink },
+  pickerClose: { minWidth: 58, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  pickerSubtitle: { color: palette.muted, fontSize: 12, lineHeight: 18, marginVertical: 8 },
+  pickerList: { flexShrink: 1, marginVertical: 8 },
+  pickerChoice: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderWidth: 1, borderColor: palette.line, marginBottom: 8, backgroundColor: palette.paper },
+  pickerSelected: { borderColor: palette.accent, backgroundColor: palette.soft },
+  pickerImage: { width: 64, height: 76 },
+  pickerCheck: { color: palette.accent, fontSize: 22 },
+  outfitGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
+  outfitCardWide: { width: '31.9%' },
+  refineButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderWidth: 1, borderColor: palette.line, marginBottom: 18 },
+  refineText: { color: palette.ink, fontSize: 12, fontWeight: '600' },
+  detailsButton: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, borderTopWidth: 1, borderColor: palette.line },
   safeArea: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, paddingBottom: 28 },
   content: {
     width: '100%',
-    maxWidth: 560,
+    maxWidth: 1120,
     alignSelf: 'center',
     paddingHorizontal: 22,
   },
@@ -576,42 +626,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#DCE3DC',
+    borderBottomColor: palette.line,
   },
   brandGroup: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   brandMark: {
     width: 36,
     height: 36,
-    borderRadius: 8,
-    backgroundColor: colors.green,
+    borderRadius: 2,
+    backgroundColor: colors.black,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandMarkText: { color: colors.lime, fontSize: 12, fontWeight: '800' },
+  brandMarkText: { color: colors.lavender, fontSize: 12, fontWeight: '800' },
   brandName: { color: colors.ink, fontSize: 12, fontWeight: '800', letterSpacing: 1.1 },
   brandCaption: { marginTop: 3, color: colors.muted, fontSize: 9, fontWeight: '600', letterSpacing: 1.1 },
   wardrobeLabel: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  wardrobeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#7E9A68' },
+  wardrobeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: palette.accent },
   wardrobeText: { color: colors.muted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
-  hero: { paddingTop: 28, paddingBottom: 26 },
-  eyebrow: { color: '#627A68', fontSize: 10, fontWeight: '800', letterSpacing: 1.6 },
+  hero: { paddingTop: 28, paddingBottom: 20 },
+  eyebrow: { color: palette.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1.6 },
   title: {
     marginTop: 9,
     color: colors.ink,
     fontFamily: 'serif',
-    fontSize: 42,
-    lineHeight: 46,
-    fontWeight: '600',
+    fontSize: 46,
+    lineHeight: 52,
+    fontWeight: '400',
   },
-  titlePeriod: { color: '#D8755D' },
-  subtitle: { maxWidth: 330, marginTop: 10, color: colors.muted, fontSize: 14, lineHeight: 21 },
+  titlePeriod: { color: palette.accent },
+  subtitle: { maxWidth: 560, marginTop: 10, color: colors.muted, fontSize: 14, lineHeight: 21 },
   controlsCard: {
     gap: 9,
     marginBottom: 14,
     padding: 13,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 8,
+    borderRadius: 2,
     backgroundColor: colors.white,
   },
   controlLabel: { marginTop: 2, color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
@@ -622,34 +672,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 20,
-    backgroundColor: '#FAFBF8',
+    borderRadius: 2,
+    backgroundColor: '#FAFAFA',
   },
-  controlChipSelected: { borderColor: colors.green, backgroundColor: colors.green },
+  controlChipSelected: { borderColor: colors.black, backgroundColor: colors.black },
   controlChipText: { color: colors.ink, fontSize: 10, fontWeight: '700' },
   controlChipTextSelected: { color: colors.white },
   quizCard: {
-    minHeight: 88,
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 25,
+    marginBottom: 24,
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderWidth: 1,
-    borderColor: '#D9E1D9',
-    borderRadius: 8,
-    backgroundColor: '#FAFBF8',
+    borderColor: palette.line,
+    borderRadius: 2,
+    backgroundColor: '#FAFAFA',
   },
   quizCardDisabled: { opacity: 0.65 },
   quizCardPressed: { opacity: 0.78 },
   quizCardCopy: { flex: 1 },
-  quizEyebrow: { color: '#627A68', fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
+  quizEyebrow: { color: palette.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
   quizTitle: { marginTop: 5, color: colors.ink, fontSize: 14, fontWeight: '800' },
   quizDescription: { marginTop: 4, color: colors.muted, fontSize: 11, lineHeight: 16 },
-  quizArrow: { color: colors.green, fontSize: 23, fontWeight: '600' },
-  storageNotice: { marginBottom: 12, padding: 12, borderRadius: 8, backgroundColor: '#F9E8E4' },
+  quizArrow: { color: colors.black, fontSize: 23, fontWeight: '600' },
+  storageNotice: { marginBottom: 12, padding: 12, borderRadius: 2, backgroundColor: '#F9E8E4' },
   storageNoticeText: { color: '#9B3F35', fontSize: 12, lineHeight: 17 },
   storageRetry: { minHeight: 42, justifyContent: 'center', marginTop: 3 },
   storageRetryText: { color: '#7C302A', fontSize: 12, fontWeight: '800' },
@@ -659,20 +709,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 11,
   },
-  sectionLabel: { color: colors.ink, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  sectionLabel: { color: colors.ink, fontFamily: 'serif', fontSize: 25, fontWeight: '400' },
   sectionCount: { color: colors.muted, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
   chipList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 26 },
   chip: {
-    minHeight: 38,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 15,
     borderWidth: 1,
-    borderColor: '#D9E1D9',
-    borderRadius: 20,
-    backgroundColor: '#FAFBF8',
+    borderColor: palette.line,
+    borderRadius: 24,
+    backgroundColor: '#FAFAFA',
   },
-  chipSelected: { borderColor: colors.green, backgroundColor: colors.green },
+  chipSelected: { borderColor: colors.black, backgroundColor: colors.black },
   chipText: { color: colors.ink, fontSize: 12, fontWeight: '600' },
   chipTextSelected: { color: colors.white },
   recommendationHeading: {
@@ -683,79 +733,79 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   recommendationNote: { maxWidth: 300, marginTop: 5, color: colors.muted, fontSize: 12, lineHeight: 17 },
-  featureCard: { padding: 18, borderRadius: 8, backgroundColor: colors.green },
-  outfitCard: { marginBottom: 20 },
+  featureCard: { padding: 16, backgroundColor: palette.paper },
+  outfitCard: { width: '100%', marginBottom: 20, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.paper },
   featureTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   matchBadge: { minWidth: 55, alignItems: 'center', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 7, backgroundColor: 'rgba(255,255,255,0.14)' },
-  matchScore: { color: colors.white, fontSize: 14, fontWeight: '800' },
-  matchLabel: { marginTop: 2, color: '#D3DED5', fontSize: 7, fontWeight: '800', letterSpacing: 0.8 },
+  matchScore: { color: palette.ink, fontSize: 14, fontWeight: '800' },
+  matchLabel: { marginTop: 2, color: palette.ink, fontSize: 7, fontWeight: '800', letterSpacing: 0.8 },
   featureTopLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  featureEyebrow: { color: '#D9E7D4', fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
+  featureEyebrow: { color: palette.ink, fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
   readyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 8,
     paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 2,
+    backgroundColor: palette.soft,
   },
-  readyDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.lime },
-  readyText: { color: colors.white, fontSize: 8, fontWeight: '700', letterSpacing: 0.6 },
-  featureTitle: { marginTop: 20, color: colors.white, fontFamily: 'serif', fontSize: 27, lineHeight: 32, fontWeight: '600' },
-  featureCaption: { marginTop: 4, color: '#D3DED5', fontSize: 12 },
-  paletteRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 20 },
+  readyDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.lavender },
+  readyText: { color: palette.ink, fontSize: 8, fontWeight: '700', letterSpacing: 0.6 },
+  featureTitle: { marginTop: 12, color: palette.ink, fontSize: 25, lineHeight: 30, fontWeight: '600' },
+  featureCaption: { marginTop: 4, color: palette.ink, fontSize: 12 },
+  paletteRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   paletteItem: {
     minWidth: 68,
     alignItems: 'center',
     gap: 6,
     paddingVertical: 8,
     paddingHorizontal: 9,
-    borderRadius: 8,
+    borderRadius: 2,
     backgroundColor: 'rgba(255,255,255,0.09)',
   },
   paletteSwatch: { width: 31, height: 18, borderRadius: 5 },
-  unknownSwatch: { backgroundColor: '#6F7F75' },
-  lightSwatch: { borderWidth: 1, borderColor: '#D6D8D0' },
-  paletteLabel: { color: '#E5ECE3', fontSize: 9, fontWeight: '600', textTransform: 'uppercase' },
+  unknownSwatch: { backgroundColor: '#777777' },
+  lightSwatch: { borderWidth: 1, borderColor: '#D6D6D6' },
+  paletteLabel: { color: palette.ink, fontSize: 9, fontWeight: '600', textTransform: 'uppercase' },
   piecesHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 23, marginBottom: 8 },
   pieceCount: { color: colors.muted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
-  pieceList: { paddingHorizontal: 13, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: colors.white },
-  pieceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: 1, borderBottomColor: '#EEF1EC' },
+  pieceList: { paddingHorizontal: 13, borderWidth: 1, borderColor: colors.line, borderRadius: 2, backgroundColor: colors.white },
+  pieceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
   lastPieceRow: { borderBottomWidth: 0 },
   pieceSwatch: { width: 40, height: 40, borderRadius: 7 },
   pieceCopy: { flex: 1, minWidth: 0 },
-  pieceCategory: { color: '#778179', fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  pieceCategory: { color: palette.muted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
   pieceName: { marginTop: 4, color: colors.ink, fontSize: 13, fontWeight: '700' },
   pieceColor: { maxWidth: 76, color: colors.muted, fontSize: 11, textAlign: 'right' },
-  missingPieceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: 1, borderBottomColor: '#EEF1EC' },
-  missingPieceMark: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#C7CEC8', borderStyle: 'dashed', borderRadius: 7 },
+  missingPieceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
+  missingPieceMark: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#CCCCCC', borderStyle: 'dashed', borderRadius: 7 },
   missingPieceMarkText: { color: colors.muted, fontSize: 20, fontWeight: '500' },
   missingPieceName: { marginTop: 4, color: colors.muted, fontSize: 13, fontWeight: '700' },
-  reasonsCard: { marginTop: 10, paddingHorizontal: 13, paddingVertical: 8, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: colors.white },
+  reasonsCard: { marginTop: 10, paddingHorizontal: 13, paddingVertical: 8, borderWidth: 1, borderColor: colors.line, borderRadius: 2, backgroundColor: colors.white },
   reasonRow: { flexDirection: 'row', gap: 7, paddingVertical: 5 },
-  reasonMark: { color: '#627A68', fontSize: 18, lineHeight: 17, fontWeight: '800' },
+  reasonMark: { color: palette.accent, fontSize: 18, lineHeight: 17, fontWeight: '800' },
   reasonText: { flex: 1, color: colors.ink, fontSize: 11, lineHeight: 16 },
   scoreNote: { marginTop: 6, color: colors.muted, fontSize: 9, lineHeight: 13 },
   noScoreNote: { marginTop: 6, color: colors.muted, fontSize: 10, lineHeight: 15 },
-  whyButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#EEF1EC', marginTop: 8 },
-  whyButtonText: { color: colors.green, fontSize: 11, fontWeight: '800' },
-  whyButtonArrow: { color: colors.green, fontSize: 19, fontWeight: '700' },
+  whyButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#EEEEEE', marginTop: 8 },
+  whyButtonText: { color: colors.black, fontSize: 11, fontWeight: '800' },
+  whyButtonArrow: { color: colors.black, fontSize: 19, fontWeight: '700' },
   factorList: { paddingBottom: 7 },
-  factorRow: { minHeight: 47, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: 1, borderBottomColor: '#EEF1EC' },
+  factorRow: { minHeight: 47, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
   factorCopy: { flex: 1 },
   factorName: { color: colors.ink, fontSize: 11, fontWeight: '700' },
   factorDetail: { marginTop: 3, color: colors.muted, fontSize: 9 },
-  factorPercent: { color: colors.green, fontSize: 12, fontWeight: '800' },
+  factorPercent: { color: colors.black, fontSize: 12, fontWeight: '800' },
   priorityWeights: { marginTop: 8, color: colors.muted, fontSize: 9, lineHeight: 13 },
-  guidanceCard: { marginBottom: 14, padding: 15, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: '#FAFBF8' },
+  guidanceCard: { marginBottom: 14, padding: 15, borderWidth: 1, borderColor: colors.line, borderRadius: 2, backgroundColor: '#FAFAFA' },
   guidanceTitle: { color: colors.ink, fontSize: 14, fontWeight: '800' },
   guidanceMessage: { marginTop: 5, color: colors.muted, fontSize: 11, lineHeight: 16 },
   guidanceDetail: { marginTop: 5, color: '#80534A', fontSize: 10, lineHeight: 15 },
-  addMissingButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 5, paddingHorizontal: 10, borderRadius: 7, backgroundColor: '#E7EEE4' },
-  addMissingText: { color: colors.green, fontSize: 11, fontWeight: '800' },
-  addMissingArrow: { color: colors.green, fontSize: 17, fontWeight: '700' },
-  emptyState: { padding: 20, borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: colors.white },
+  addMissingButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 5, paddingHorizontal: 10, borderRadius: 7, backgroundColor: '#F3EDFC' },
+  addMissingText: { color: colors.black, fontSize: 11, fontWeight: '800' },
+  addMissingArrow: { color: colors.black, fontSize: 17, fontWeight: '700' },
+  emptyState: { padding: 20, borderWidth: 1, borderColor: colors.line, borderRadius: 2, backgroundColor: colors.white },
   emptyTitle: { color: colors.ink, fontSize: 16, fontWeight: '700' },
   emptyMessage: { marginTop: 7, color: colors.muted, fontSize: 13, lineHeight: 19 },
   inlineMessage: { marginTop: 10, color: colors.muted, fontSize: 12, lineHeight: 18 },
@@ -766,12 +816,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 19,
     paddingHorizontal: 17,
-    borderRadius: 8,
-    backgroundColor: colors.lime,
+    borderRadius: 2,
+    backgroundColor: colors.ink,
   },
   generateButtonDisabled: { opacity: 0.55 },
   generateButtonPressed: { opacity: 0.78 },
-  generateButtonText: { color: colors.ink, fontSize: 14, fontWeight: '800' },
-  generateButtonIcon: { color: colors.green, fontSize: 23, fontWeight: '500' },
-  footerNote: { marginTop: 13, color: '#7D8980', fontSize: 8, fontWeight: '700', letterSpacing: 1, textAlign: 'center' },
+  generateButtonText: { color: colors.white, fontSize: 14, fontWeight: '800' },
+  generateButtonIcon: { color: colors.white, fontSize: 23, fontWeight: '500' },
+  footerNote: { marginTop: 13, color: palette.muted, fontSize: 8, fontWeight: '700', letterSpacing: 1, textAlign: 'center' },
 });

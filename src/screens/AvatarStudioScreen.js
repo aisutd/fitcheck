@@ -1,3 +1,4 @@
+import { palette } from '../theme/tokens';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber/native';
 import { StatusBar } from 'expo-status-bar';
@@ -5,7 +6,6 @@ import {
   ActivityIndicator,
   PanResponder,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -222,7 +222,6 @@ export default function AvatarStudioScreen({
   customization,
   storageError = '',
   onCustomizationChange,
-  onClose,
 }) {
   const [yaw, setYaw] = useState(0);
   const [distance, setDistance] = useState(CAMERA_DISTANCE.initial);
@@ -246,6 +245,8 @@ export default function AvatarStudioScreen({
     return () => clearTimeout(timeout);
   }, [renderAttempt, rendererReady, renderError]);
 
+  // PanResponder stores these callbacks; refs are read only when a gesture fires.
+  /* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization */
   const panResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 3,
     onPanResponderGrant: () => {
@@ -255,6 +256,7 @@ export default function AvatarStudioScreen({
       setYaw(gestureStartYaw.current + gesture.dx * 0.012);
     },
   }), []);
+  /* eslint-enable react-hooks/refs, react-hooks/preserve-manual-memoization */
 
   async function updateCustomization(key, value) {
     const nextCustomization = { ...customization, [key]: value };
@@ -300,23 +302,16 @@ export default function AvatarStudioScreen({
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.topBar}>
             <View>
-              <Text style={styles.eyebrow}>FITCHECK · AVATAR STUDIO</Text>
+              <Text style={styles.eyebrow}>AVATAR STUDIO</Text>
               <Text style={styles.title}>Make it yours.</Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close Avatar Studio"
-              onPress={onClose}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </Pressable>
+
           </View>
 
           <Text style={styles.subtitle}>
@@ -347,7 +342,7 @@ export default function AvatarStudioScreen({
                       frameloop="demand"
                       gl={{ antialias: false, powerPreference: 'low-power' }}
                       onCreated={({ gl }) => {
-                        gl.setClearColor('#E8EDE6', 1);
+                        gl.setClearColor(palette.illustration, 1);
                         setRendererReady(true);
                       }}
                       style={styles.canvasElement}
@@ -463,43 +458,43 @@ export default function AvatarStudioScreen({
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F1F4EF' },
+  safeArea: { flex: 1, backgroundColor: palette.background },
   scrollContent: { flexGrow: 1, paddingBottom: 28 },
-  content: { width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22 },
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 22 },
   topBar: {
     minHeight: 78,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#DCE3DC',
+    borderBottomColor: palette.line,
   },
-  eyebrow: { color: '#627A68', fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
-  title: { marginTop: 5, color: '#202B27', fontFamily: 'serif', fontSize: 29, fontWeight: '600' },
+  eyebrow: { color: palette.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
+  title: { marginTop: 5, color: palette.ink, fontFamily: 'serif', fontSize: 29, fontWeight: '600' },
   closeButton: {
     minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: 13,
     borderWidth: 1,
-    borderColor: '#DCE3DC',
-    borderRadius: 8,
-    backgroundColor: '#FAFBF8',
+    borderColor: palette.line,
+    borderRadius: 3,
+    backgroundColor: palette.paper,
   },
-  closeButtonText: { color: '#27483C', fontSize: 12, fontWeight: '800' },
-  subtitle: { marginTop: 15, color: '#6C7771', fontSize: 13, lineHeight: 19 },
-  rendererLabel: { marginTop: 17, marginBottom: 8, color: '#202B27', fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  closeButtonText: { color: palette.ink, fontSize: 12, fontWeight: '800' },
+  subtitle: { marginTop: 15, color: palette.muted, fontSize: 13, lineHeight: 19 },
+  rendererLabel: { marginTop: 17, marginBottom: 8, color: palette.ink, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
   stage: {
     height: 330,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#DCE3DC',
-    borderRadius: 10,
-    backgroundColor: '#E8EDE6',
+    borderColor: palette.line,
+    borderRadius: 3,
+    backgroundColor: palette.illustration,
   },
   canvas: { flex: 1 },
   canvasElement: { flex: 1 },
@@ -508,26 +503,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#E8EDE6',
+    backgroundColor: palette.illustration,
   },
-  loadingText: { color: '#6C7771', fontSize: 12, fontWeight: '600' },
+  loadingText: { color: palette.muted, fontSize: 12, fontWeight: '600' },
   rendererError: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
-  rendererErrorTitle: { color: '#202B27', fontSize: 17, fontWeight: '800', textAlign: 'center' },
-  rendererErrorCopy: { marginTop: 9, color: '#6C7771', fontSize: 12, lineHeight: 18, textAlign: 'center' },
+  rendererErrorTitle: { color: palette.ink, fontSize: 17, fontWeight: '800', textAlign: 'center' },
+  rendererErrorCopy: { marginTop: 9, color: palette.muted, fontSize: 12, lineHeight: 18, textAlign: 'center' },
   retryButton: {
     minHeight: 44,
     justifyContent: 'center',
     marginTop: 14,
     paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#27483C',
+    borderRadius: 3,
+    backgroundColor: palette.ink,
   },
-  retryButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  retryButtonText: { color: palette.paper, fontSize: 12, fontWeight: '800' },
   cameraControls: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 9 },
   cameraButton: {
     minHeight: 42,
@@ -536,26 +531,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 11,
     borderWidth: 1,
-    borderColor: '#DCE3DC',
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    borderColor: palette.line,
+    borderRadius: 3,
+    backgroundColor: palette.paper,
   },
-  cameraButtonPressed: { backgroundColor: '#E7EDE6' },
-  cameraButtonText: { color: '#27483C', fontSize: 10, fontWeight: '800' },
-  errorNotice: { marginTop: 12, padding: 12, borderRadius: 8, backgroundColor: '#F9E8E4' },
+  cameraButtonPressed: { backgroundColor: palette.soft },
+  cameraButtonText: { color: palette.ink, fontSize: 10, fontWeight: '800' },
+  errorNotice: { marginTop: 12, padding: 12, borderRadius: 3, backgroundColor: '#F9E8E4' },
   errorText: { color: '#9B3F35', fontSize: 12, lineHeight: 17 },
-  saveStatus: { marginTop: 11, color: '#6C7771', fontSize: 11 },
+  saveStatus: { marginTop: 11, color: palette.muted, fontSize: 11 },
   customizationCard: {
     gap: 10,
     marginTop: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#DCE3DC',
-    borderRadius: 9,
-    backgroundColor: '#FFFFFF',
+    borderColor: palette.line,
+    borderRadius: 3,
+    backgroundColor: palette.paper,
   },
-  sectionTitle: { color: '#202B27', fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  controlLabel: { marginTop: 5, color: '#6C7771', fontSize: 9, fontWeight: '800', letterSpacing: 0.9 },
+  sectionTitle: { color: palette.ink, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  controlLabel: { marginTop: 5, color: palette.muted, fontSize: 9, fontWeight: '800', letterSpacing: 0.9 },
   choiceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   choiceChip: {
     minHeight: 42,
@@ -564,14 +559,14 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingHorizontal: 11,
     borderWidth: 1,
-    borderColor: '#DCE3DC',
+    borderColor: palette.line,
     borderRadius: 22,
-    backgroundColor: '#FAFBF8',
+    backgroundColor: palette.paper,
   },
-  choiceChipSelected: { borderColor: '#27483C', backgroundColor: '#27483C' },
+  choiceChipSelected: { borderColor: palette.ink, backgroundColor: palette.ink },
   choiceChipDisabled: { opacity: 0.65 },
-  choiceText: { color: '#202B27', fontSize: 10, fontWeight: '700' },
-  choiceTextSelected: { color: '#FFFFFF' },
+  choiceText: { color: palette.ink, fontSize: 10, fontWeight: '700' },
+  choiceTextSelected: { color: palette.paper },
   swatch: { width: 13, height: 13, borderRadius: 7, borderWidth: 1, borderColor: '#00000020' },
-  disclaimer: { marginTop: 14, color: '#6C7771', fontSize: 10, lineHeight: 16 },
+  disclaimer: { marginTop: 14, color: palette.muted, fontSize: 10, lineHeight: 16 },
 });

@@ -1,8 +1,8 @@
+import { palette } from '../theme/tokens';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +11,6 @@ import {
 import {
   QUIZ_QUESTIONS,
   QUIZ_SCHEMA_VERSION,
-  hasAnyAnswer,
   isOptionSelected,
   movePriority,
   toggleMultipleChoice,
@@ -20,14 +19,14 @@ import {
 } from '../features/quiz/quizModel';
 
 const COLORS = {
-  background: '#F1F4EF',
-  ink: '#202B27',
-  muted: '#6C7771',
-  green: '#27483C',
-  lime: '#D4EF87',
-  line: '#DCE3DC',
+  background: '#FCFBF9',
+  ink: '#151515',
+  muted: '#666666',
+  black: '#171717',
+  lavender: '#EDE5FF',
+  line: '#E5E5E5',
   white: '#FFFFFF',
-  accent: '#D8755D',
+  accent: '#7040B8',
   error: '#9B3F35',
   errorBackground: '#F9E8E4',
 };
@@ -288,18 +287,12 @@ export default function KnowYouQuizScreen({
   const progressValue = showReview ? 10 : currentQuestion + 1;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           <View style={styles.topBar}>
-            <View style={styles.brandGroup}>
-              <View style={styles.brandMark}><Text style={styles.brandMarkText}>FC</Text></View>
-              <View>
-                <Text style={styles.brandName}>FITCHECK</Text>
-                <Text style={styles.brandCaption}>KNOW YOU</Text>
-              </View>
-            </View>
+            <Text style={styles.eyebrow}>YOUR STYLE PROFILE</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityHint="Save your progress and return to the outfit screen"
@@ -516,7 +509,7 @@ export default function KnowYouQuizScreen({
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -536,23 +529,23 @@ const styles = StyleSheet.create({
   brandMark: {
     width: 36,
     height: 36,
-    borderRadius: 8,
-    backgroundColor: COLORS.green,
+    borderRadius: 2,
+    backgroundColor: COLORS.black,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandMarkText: { color: COLORS.lime, fontSize: 12, fontWeight: '800' },
+  brandMarkText: { color: COLORS.lavender, fontSize: 12, fontWeight: '800' },
   brandName: { color: COLORS.ink, fontSize: 12, fontWeight: '800', letterSpacing: 1.1 },
   brandCaption: { marginTop: 3, color: COLORS.muted, fontSize: 9, fontWeight: '600', letterSpacing: 1.1 },
   saveExitButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  saveExitText: { color: COLORS.green, fontSize: 12, fontWeight: '700' },
+  saveExitText: { color: COLORS.black, fontSize: 12, fontWeight: '700' },
   progressWrap: { marginTop: 20 },
-  progressTrack: { height: 4, overflow: 'hidden', borderRadius: 3, backgroundColor: '#DCE3DC' },
-  progressFill: { height: '100%', borderRadius: 3, backgroundColor: COLORS.green },
+  progressTrack: { height: 4, overflow: 'hidden', borderRadius: 3, backgroundColor: palette.line },
+  progressFill: { height: '100%', borderRadius: 3, backgroundColor: COLORS.accent },
   progressLabel: { marginTop: 8, color: COLORS.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
   hero: { paddingTop: 25, paddingBottom: 21 },
-  eyebrow: { color: '#627A68', fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  title: { marginTop: 9, color: COLORS.ink, fontFamily: 'serif', fontSize: 32, lineHeight: 38, fontWeight: '600' },
+  eyebrow: { color: palette.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
+  title: { marginTop: 9, color: COLORS.ink, fontFamily: 'serif', fontSize: 34, lineHeight: 40, fontWeight: '400' },
   subtitle: { marginTop: 9, color: COLORS.muted, fontSize: 14, lineHeight: 21 },
   group: { marginBottom: 21 },
   groupLabel: { marginBottom: 9, color: COLORS.ink, fontSize: 11, fontWeight: '800', letterSpacing: 0.3 },
@@ -568,27 +561,27 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderColor: COLORS.line,
-    borderRadius: 9,
+    borderRadius: 2,
     backgroundColor: COLORS.white,
   },
-  optionSelected: { borderColor: COLORS.green, backgroundColor: '#E7EEE4' },
+  optionSelected: { borderColor: COLORS.accent, backgroundColor: '#F3EDFC' },
   optionPressed: { opacity: 0.76 },
   optionVisual: {
     width: 32,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: '#F1F4EF',
+    borderRadius: 2,
+    backgroundColor: palette.paper,
   },
-  optionVisualSelected: { backgroundColor: COLORS.green },
-  optionVisualText: { color: COLORS.green, fontSize: 16, fontWeight: '700' },
+  optionVisualSelected: { backgroundColor: COLORS.black },
+  optionVisualText: { color: COLORS.black, fontSize: 16, fontWeight: '700' },
   optionVisualTextSelected: { color: COLORS.white },
   swatches: { flexDirection: 'row', gap: 2 },
   swatch: { width: 7, height: 20, borderRadius: 4 },
   optionCopy: { flex: 1, minWidth: 0 },
   optionTitle: { color: COLORS.ink, fontSize: 12, lineHeight: 16, fontWeight: '700' },
-  optionTitleSelected: { color: COLORS.green },
+  optionTitleSelected: { color: COLORS.accent },
   optionDetail: { marginTop: 3, color: COLORS.muted, fontSize: 10, lineHeight: 14 },
   selectionMark: {
     width: 18,
@@ -596,20 +589,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#CCD5CC',
-    borderRadius: 10,
+    borderColor: '#CCCCCC',
+    borderRadius: 3,
   },
-  selectionMarkSelected: { borderColor: COLORS.green, backgroundColor: COLORS.green },
+  selectionMarkSelected: { borderColor: COLORS.black, backgroundColor: COLORS.black },
   selectionMarkText: { color: COLORS.white, fontSize: 11, fontWeight: '800' },
   rankedList: {
     marginBottom: 11,
     padding: 11,
-    borderRadius: 9,
+    borderRadius: 2,
     backgroundColor: COLORS.white,
   },
   rankedHeading: { marginBottom: 5, color: COLORS.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
   rankedRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  rankBadge: { width: 25, height: 25, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: COLORS.green },
+  rankBadge: { width: 25, height: 25, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: COLORS.black },
   rankBadgeText: { color: COLORS.white, fontSize: 11, fontWeight: '800' },
   rankedName: { flex: 1, color: COLORS.ink, fontSize: 13, fontWeight: '700' },
   reorderButton: {
@@ -619,10 +612,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: COLORS.line,
-    borderRadius: 8,
+    borderRadius: 2,
   },
   reorderDisabled: { opacity: 0.35 },
-  reorderText: { color: COLORS.green, fontSize: 19, fontWeight: '700' },
+  reorderText: { color: COLORS.black, fontSize: 19, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: 10, marginTop: 5 },
   primaryButton: {
     minHeight: 54,
@@ -631,11 +624,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: COLORS.lime,
+    borderRadius: 2,
+    backgroundColor: COLORS.ink,
   },
-  primaryButtonText: { color: COLORS.ink, fontSize: 13, fontWeight: '800' },
-  primaryButtonArrow: { color: COLORS.green, fontSize: 20, fontWeight: '600' },
+  primaryButtonText: { color: COLORS.white, fontSize: 13, fontWeight: '800' },
+  primaryButtonArrow: { color: COLORS.white, fontSize: 20, fontWeight: '600' },
   secondaryButton: {
     minHeight: 50,
     alignItems: 'center',
@@ -643,15 +636,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderWidth: 1,
     borderColor: COLORS.line,
-    borderRadius: 8,
+    borderRadius: 2,
     backgroundColor: COLORS.white,
   },
-  secondaryButtonText: { color: COLORS.green, fontSize: 12, fontWeight: '700' },
+  secondaryButtonText: { color: COLORS.black, fontSize: 12, fontWeight: '700' },
   skipQuestionButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   skipQuestionText: { color: COLORS.muted, fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
   privacyNote: { marginTop: 12, color: COLORS.muted, fontSize: 10, textAlign: 'center' },
   validationError: { marginTop: 8, color: COLORS.error, fontSize: 12, lineHeight: 18, fontWeight: '600' },
-  errorBanner: { marginTop: 14, padding: 12, borderRadius: 8, backgroundColor: COLORS.errorBackground },
+  errorBanner: { marginTop: 14, padding: 12, borderRadius: 2, backgroundColor: COLORS.errorBackground },
   errorBannerText: { color: COLORS.error, fontSize: 12, lineHeight: 17 },
   review: { paddingBottom: 12 },
   reviewRow: {
@@ -669,7 +662,7 @@ const styles = StyleSheet.create({
   changedBadge: { color: COLORS.accent, fontSize: 8, fontWeight: '800', letterSpacing: 0.6 },
   reviewAnswer: { marginTop: 6, color: COLORS.muted, fontSize: 11, lineHeight: 16 },
   editButton: { minWidth: 48, minHeight: 42, alignItems: 'center', justifyContent: 'center' },
-  editButtonText: { color: COLORS.green, fontSize: 12, fontWeight: '800' },
+  editButtonText: { color: COLORS.black, fontSize: 12, fontWeight: '800' },
   commitButton: { marginTop: 16 },
   buttonDisabled: { opacity: 0.6 },
   reviewSecondaryActions: { flexDirection: 'row', justifyContent: 'space-between', gap: 9, marginTop: 10 },

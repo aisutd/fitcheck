@@ -1,0 +1,30 @@
+const assert = require('node:assert/strict');
+const { getSwapChoices, applyOutfitSwaps } = require('../src/features/suggest/outfitSwaps');
+const { generateRecommendations, scorePreferenceFactors } = require('../src/features/suggest/outfitRecommendations');
+const item = (id, category, extra = {}) => ({ id, category, name: id, occasions: ['Work'], available: true, ...extra });
+const wardrobe = [item('top-a', 'top'), item('top-b', 'top', { weatherTags: ['cold'] }), item('bottom', 'bottom'), item('shoe', 'shoes'), item('layer-a','layer'), item('layer-b','layer'), item('blocked','top',{ available:false }), item('wrong','top',{ occasions:['Gym'] })];
+const base = generateRecommendations('Work', wardrobe).recommendations[0];
+const original = JSON.stringify(base);
+assert.deepEqual(getSwapChoices(wardrobe, 'Work', 'top').map(x=>x.id), ['top-a','top-b']);
+assert.equal(getSwapChoices([...wardrobe, wardrobe[0]], 'Work', 'top').length, 2);
+const next = applyOutfitSwaps(base, { top:'top-b' }, wardrobe, null, 'cold');
+assert.equal(next.items.find(x=>x.category==='top').id, 'top-b');
+assert.deepEqual(next.items.filter(x=>x.category!=='top'), base.items.filter(x=>x.category!=='top'));
+assert.equal(next.cardId, base.signature);
+assert.equal(JSON.stringify(base), original);
+const expected = scorePreferenceFactors(next.items, null, 'cold');
+assert.equal(next.score, expected.score);
+assert.deepEqual(next.factors, expected.factors);
+assert.deepEqual(next.reasons, ['Work occasion match from the selected clothing records.', ...expected.reasonCandidates].slice(0,3));
+for (const id of ['blocked','wrong','shoe','missing']) {
+ assert.deepEqual(applyOutfitSwaps(base, { top:id }, wardrobe, null).items, base.items);
+}
+const unavailable = wardrobe.map(x=>x.id==='top-b'?{...x,available:false}:x);
+assert.deepEqual(applyOutfitSwaps(base, { top:'top-b' }, unavailable, null).items, base.items);
+assert.deepEqual(applyOutfitSwaps(base, {}, wardrobe, null).items, base.items);
+assert.equal(applyOutfitSwaps(base, {}, wardrobe, null).customized, false);
+const repeated = applyOutfitSwaps(base, { top:'top-b', layer:'layer-b' }, wardrobe, null);
+assert.equal(repeated.items.find(x=>x.category==='top').id, 'top-b');
+if (base.items.some(x=>x.category==='layer')) assert.equal(repeated.items.find(x=>x.category==='layer').id, 'layer-b');
+assert.equal(getSwapChoices([], 'Work', 'top').length, 0);
+console.log('Passed outfit swap filtering, isolation, scoring, invalidation, and reset checks.');

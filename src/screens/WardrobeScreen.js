@@ -1,3 +1,5 @@
+import GarmentIllustration from '../components/GarmentIllustration';
+import { palette } from '../theme/tokens';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -7,7 +9,6 @@ import {
   Alert,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -51,13 +52,13 @@ const WEATHER_TAGS = [
   { id: 'rainy', label: 'Rainy' },
 ];
 const COLORS = {
-  background: '#F1F4EF',
-  ink: '#202B27',
-  muted: '#6C7771',
-  green: '#27483C',
-  lime: '#D4EF87',
-  line: '#DCE3DC',
-  white: '#FFFFFF',
+  background: palette.background,
+  ink: palette.ink,
+  muted: palette.muted,
+  green: palette.ink,
+  lime: palette.ink,
+  line: palette.line,
+  white: palette.paper,
   error: '#9B3F35',
 };
 
@@ -131,10 +132,10 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
             onError={onEdit.markPhotoMissing}
           />
         ) : (
-          <View style={[styles.itemPlaceholder, item.colorHex && { backgroundColor: item.colorHex }]}>
-            <Text style={styles.itemPlaceholderText}>
-              {photoMissing ? 'PHOTO\nMISSING' : item.category.toUpperCase()}
-            </Text>
+          <View style={[styles.itemPlaceholder, { backgroundColor: palette.illustration }]}>
+            {!photoMissing && ['top', 'bottom', 'shoes', 'layer'].includes(item.category) ? (
+              <GarmentIllustration category={item.category} />
+            ) : <Text style={styles.itemPlaceholderText}>{photoMissing ? 'PHOTO MISSING' : item.category.toUpperCase()}</Text>}
           </View>
         )}
       </View>
@@ -151,7 +152,7 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
             .join(' · ')}
         </Text>
         {item.size ? <Text style={styles.itemMeta}>Size {item.size}{item.sizeSystem ? ` · ${item.sizeSystem}` : ''}</Text> : null}
-        {mode === 'demo' ? <Text style={styles.demoLabel}>DEMO EXAMPLE</Text> : null}
+        {mode === 'demo' ? <Text style={styles.demoLabel}>DEMO EXAMPLE · CATEGORY ILLUSTRATION</Text> : !item.photoUri ? <Text style={styles.demoLabel}>CATEGORY ILLUSTRATION</Text> : null}
         <View style={styles.itemActions}>
           <ActionButton
             title={item.available ? 'Mark unavailable' : 'Mark available'}
@@ -174,7 +175,6 @@ export default function WardrobeScreen({
   wardrobeState,
   storageError = '',
   onWardrobeChange,
-  onClose,
 }) {
   const { mode } = wardrobeState;
   const demoItems = DEMO_ITEMS.map((item) => ({
@@ -469,23 +469,10 @@ export default function WardrobeScreen({
   const dynamicTypes = [...new Set(allItems.map((item) => item.clothingType).filter(Boolean))];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
-          <View style={styles.topBar}>
-            <Pressable accessibilityRole="button" onPress={onClose} style={styles.backButton}>
-              <Text style={styles.backText}>‹ Suggest</Text>
-            </Pressable>
-            <View style={styles.brandGroup}>
-              <View style={styles.brandMark}><Text style={styles.brandMarkText}>FC</Text></View>
-              <View>
-                <Text style={styles.brandName}>FITCHECK</Text>
-                <Text style={styles.brandCaption}>WARDROBE</Text>
-              </View>
-            </View>
-          </View>
-
           <View style={styles.hero}>
             <Text style={styles.eyebrow}>{mode === 'demo' ? 'EXPLORE THE SAMPLE CLOSET' : 'YOUR PERSONAL CLOSET'}</Text>
             <Text accessibilityRole="header" style={styles.title}>
@@ -880,14 +867,14 @@ export default function WardrobeScreen({
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { flexGrow: 1, paddingBottom: 30 },
-  content: { width: '100%', maxWidth: 680, alignSelf: 'center', paddingHorizontal: 20 },
+  content: { width: '100%', maxWidth: 900, alignSelf: 'center', paddingHorizontal: 20 },
   topBar: {
     minHeight: 62,
     flexDirection: 'row',
@@ -899,12 +886,12 @@ const styles = StyleSheet.create({
   backButton: { minHeight: 44, justifyContent: 'center', paddingRight: 8 },
   backText: { color: COLORS.green, fontSize: 12, fontWeight: '700' },
   brandGroup: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  brandMark: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: COLORS.green },
+  brandMark: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 3, backgroundColor: COLORS.green },
   brandMarkText: { color: COLORS.lime, fontSize: 11, fontWeight: '800' },
   brandName: { color: COLORS.ink, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
   brandCaption: { marginTop: 3, color: COLORS.muted, fontSize: 8, fontWeight: '700', letterSpacing: 1 },
   hero: { paddingTop: 23, paddingBottom: 17 },
-  eyebrow: { color: '#627A68', fontSize: 9, fontWeight: '800', letterSpacing: 1.4 },
+  eyebrow: { color: palette.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.4 },
   title: { marginTop: 8, color: COLORS.ink, fontFamily: 'serif', fontSize: 32, lineHeight: 38, fontWeight: '600' },
   subtitle: { marginTop: 7, color: COLORS.muted, fontSize: 12, lineHeight: 18 },
   modeRow: { flexDirection: 'row', gap: 8, marginBottom: 15 },
@@ -918,7 +905,7 @@ const styles = StyleSheet.create({
   tabText: { color: COLORS.muted, fontSize: 11, fontWeight: '700' },
   tabTextSelected: { color: COLORS.green },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  searchInput: { minHeight: 46, flex: 1, paddingHorizontal: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 8, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
+  searchInput: { minHeight: 46, flex: 1, paddingHorizontal: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
   categoryRow: { gap: 7, paddingVertical: 5, paddingBottom: 12 },
   categoryChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: COLORS.line, borderRadius: 20, backgroundColor: COLORS.white },
   categoryChipSelected: { borderColor: COLORS.green, backgroundColor: COLORS.green },
@@ -936,7 +923,7 @@ const styles = StyleSheet.create({
   sortButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 7 },
   sortText: { color: COLORS.green, fontSize: 11, fontWeight: '700' },
   list: { gap: 10, paddingBottom: 12 },
-  itemCard: { flexDirection: 'row', gap: 12, padding: 11, borderWidth: 1, borderColor: COLORS.line, borderRadius: 9, backgroundColor: COLORS.white },
+  itemCard: { flexDirection: 'row', gap: 12, padding: 11, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white },
   itemImageWrap: { width: 82, height: 108, overflow: 'hidden', borderRadius: 7, backgroundColor: '#E8ECE7' },
   itemImage: { width: '100%', height: '100%' },
   itemPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5, backgroundColor: '#E8ECE7' },
@@ -944,7 +931,7 @@ const styles = StyleSheet.create({
   itemDetails: { flex: 1, justifyContent: 'center' },
   itemTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 7 },
   itemName: { flex: 1, color: COLORS.ink, fontSize: 13, lineHeight: 18, fontWeight: '800' },
-  availabilityTag: { overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 10, fontSize: 7, fontWeight: '800', letterSpacing: 0.4 },
+  availabilityTag: { overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 3, fontSize: 7, fontWeight: '800', letterSpacing: 0.4 },
   availableTag: { color: COLORS.green, backgroundColor: '#E7EEE4' },
   unavailableTag: { color: '#80534A', backgroundColor: '#F3E7E2' },
   itemMeta: { marginTop: 5, color: COLORS.muted, fontSize: 10, lineHeight: 14 },
@@ -956,31 +943,31 @@ const styles = StyleSheet.create({
   actionButtonTextSecondary: { color: COLORS.green },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.45 },
-  emptyState: { alignItems: 'center', padding: 25, borderWidth: 1, borderColor: COLORS.line, borderRadius: 9, backgroundColor: COLORS.white },
+  emptyState: { alignItems: 'center', padding: 25, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white },
   emptyTitle: { color: COLORS.ink, fontFamily: 'serif', fontSize: 22, fontWeight: '600', textAlign: 'center' },
   emptyText: { marginTop: 8, marginBottom: 12, color: COLORS.muted, fontSize: 12, lineHeight: 18, textAlign: 'center' },
-  deletedCard: { padding: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 9, backgroundColor: COLORS.white },
+  deletedCard: { padding: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white },
   deletedCopy: { marginBottom: 9 },
   retentionText: { marginTop: 6, color: COLORS.muted, fontSize: 10, lineHeight: 14 },
   missingPhotoText: { marginTop: 5, color: COLORS.error, fontSize: 10, fontWeight: '600' },
   deletedActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   form: { paddingBottom: 20 },
   formIntro: { marginBottom: 14, color: COLORS.muted, fontSize: 11, lineHeight: 16 },
-  textInput: { minHeight: 46, marginBottom: 13, paddingHorizontal: 12, borderWidth: 1, borderColor: COLORS.line, borderRadius: 8, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
+  textInput: { minHeight: 46, marginBottom: 13, paddingHorizontal: 12, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
   checkRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
   checkbox: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.line, borderRadius: 5 },
   checkboxSelected: { borderColor: COLORS.green, backgroundColor: COLORS.green },
   checkboxMark: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
   checkLabel: { color: COLORS.ink, fontSize: 11, fontWeight: '700' },
-  photoPreview: { width: 142, height: 176, marginBottom: 9, borderRadius: 8, backgroundColor: '#E8ECE7' },
-  noPhotoPreview: { width: 142, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 9, borderRadius: 8, backgroundColor: '#E8ECE7' },
+  photoPreview: { width: 142, height: 176, marginBottom: 9, borderRadius: 3, backgroundColor: '#E8ECE7' },
+  noPhotoPreview: { width: 142, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 9, borderRadius: 3, backgroundColor: '#E8ECE7' },
   formActionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 9 },
   availabilitySwitch: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 9 },
   availabilityValue: { color: COLORS.green, fontSize: 11, fontWeight: '700' },
-  saveButton: { minHeight: 46, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: COLORS.lime },
-  saveButtonText: { color: COLORS.ink, fontSize: 12, fontWeight: '800' },
+  saveButton: { minHeight: 46, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 3, backgroundColor: COLORS.lime },
+  saveButtonText: { color: COLORS.white, fontSize: 12, fontWeight: '800' },
   formError: { marginBottom: 10, color: COLORS.error, fontSize: 11, lineHeight: 16 },
-  errorBanner: { marginBottom: 10, padding: 11, borderRadius: 8, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
-  notice: { marginBottom: 10, padding: 11, borderRadius: 8, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
+  errorBanner: { marginBottom: 10, padding: 11, borderRadius: 3, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
+  notice: { marginBottom: 10, padding: 11, borderRadius: 3, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
   privacyNote: { marginTop: 8, color: COLORS.muted, fontSize: 10, lineHeight: 15, textAlign: 'center' },
 });

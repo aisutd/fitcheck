@@ -129,3 +129,22 @@ Initial failures were addressed: sandbox loopback/network restrictions; SDK 54 c
 - The original try-on backend still uses its contributor’s fixed model description/steps/seed. Model owners should verify suitability for garments beyond its initial tank-top example before production use.
 - Dependency installation reported existing audit advisories (31 in the integrated app, including 6 high; 2 high in the analysis service). No forced/breaking dependency upgrades were applied. Review advisories before production deployment.
 - GitHub Actions execution and remote hosting/deployment were not performed. No push or merge into main is authorized or performed.
+
+## Native import follow-up
+
+A reported Hermes startup failure in the static React Three Fiber import prevented
+route modules from loading, producing misleading missing-default-export warnings.
+The installed Three 0.186.1 CommonJS entry calls Node-only `process.emitWarning`
+and uses Node `require(esm)`. Metro now resolves every bare `three` request to
+`three.module.js`, keeping a single portable Three instance for application and
+Fiber code. No route exports, avatar functionality, dependencies or credentials
+were removed or replaced.
+
+`node scripts/test-native-three.cjs` reproduces the old entry's failure with a
+Hermes-style process object, checks iOS/Android/web resolution and verifies that
+other imports still delegate to Metro. It passes. Typecheck, lint, web export and
+unminified iOS export pass; the iOS bundle excludes `THREE_CJS_DEPRECATED`.
+The browser run passed six journeys; two exceeded the existing overall timeout
+on this busy machine. A simulator startup attempt reached Expo's loading screen
+but has not established successful application rendering. Restart an existing
+Metro session with `npx expo start --clear` to load the new resolver.

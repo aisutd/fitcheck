@@ -72,3 +72,19 @@ Run backend tests separately to avoid collisions between their modules named `se
 ```
 
 CI retains the contributor’s aggregate CI gate and dependency automation, adds actual app exports/browser journeys, and runs service tests without live provider calls. The Compose file remains the original development shell container; it does not launch the application or its services.
+
+## Native startup troubleshooting
+
+If Expo Router reports missing default exports together with an import failure in
+`QuizAvatarPreview`, restart Metro after configuration changes:
+
+```sh
+npx expo start --clear
+```
+
+The routes already export components. Three r186’s CommonJS compatibility entry
+calls Node-only `process.emitWarning`, which is unavailable in Hermes.
+`metro.config.js` resolves all `three` imports/requires to its portable ES module,
+including React Three Fiber’s native imports. Keep this resolver when updating Metro
+configuration; do not patch `node_modules` or remove the avatar to bypass the error.
+`node scripts/test-native-three.cjs` checks this compatibility boundary.

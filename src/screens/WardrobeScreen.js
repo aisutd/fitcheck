@@ -3,10 +3,10 @@ import { palette } from '../theme/tokens';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Modal,
   Image,
   Pressable,
   ScrollView,
@@ -232,6 +232,10 @@ export default function WardrobeScreen({
   const [busy, setBusy] = useState(false);
   const [missingPhotos, setMissingPhotos] = useState([]);
   const [notice, setNotice] = useState('');
+  const [pendingDeletion, setPendingDeletion] = useState(null);
+  const [deletionError, setDeletionError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const deletionInFlight = useRef(false);
 
   const visibleItems = view === 'deleted'
     ? wardrobeState.recentlyDeleted
@@ -404,57 +408,58 @@ export default function WardrobeScreen({
   }
 
   function deleteItem(item) {
-    Alert.alert(
-      'Move to Recently Deleted?',
-      `${item.name} will be kept for 30 days and can be restored.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Move to Recently Deleted',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await onWardrobeChange(moveToRecentlyDeleted(wardrobeState, item.id));
-              setNotice('');
-            } catch (error) {
-              setNotice(`The clothing item could not be deleted: ${error.message}`);
-            }
-          },
-        },
-      ],
-    );
+    setDeletionError('');
+    setPendingDeletion({ id: item.id, name: item.name, permanent: false });
+  }
+
+  function cancelDeletion() {
+    if (!deletionInFlight.current) setPendingDeletion(null);
+  }
+
+  async function confirmDeletion() {
+    if (!pendingDeletion || deletionInFlight.current) return;
+    deletionInFlight.current = true;
+    setDeleting(true);
+    setDeletionError('');
+    const { id, permanent } = pendingDeletion;
+    const items = permanent ? wardrobeState.recentlyDeleted : wardrobeState.personalItems;
+    const item = items.find((entry) => entry.id === id);
+    try {
+      if (!item) throw new Error('This piece is no longer in this list. Close this dialog and check your wardrobe.');
+      const nextState = permanent
+        ? permanentlyDeleteItem(wardrobeState, id)
+        : moveToRecentlyDeleted(wardrobeState, id);
+      await onWardrobeChange(nextState);
+      setSavedMessage('');
+      setNotice(permanent ? `${item.name} was permanently deleted.` : `${item.name} moved to Recently Deleted. You can restore it for up to 30 days.`);
+      if (permanent && item.photoUri) {
+        try {
+          await deleteWardrobePhoto(item.photoUri);
+        } catch (error) {
+          setNotice(`The piece was permanently deleted, but its photo could not be cleaned up: ${error.message}`);
+        }
+      }
+      setPendingDeletion(null);
+    } catch (error) {
+      setDeletionError(`The piece could not be deleted: ${error.message}`);
+    } finally {
+      deletionInFlight.current = false;
+      setDeleting(false);
+    }
   }
 
   async function restoreItem(item) {
     try {
       await onWardrobeChange(restoreDeletedItem(wardrobeState, item.id));
-      setNotice('');
+      setNotice(`${item.name} restored to your wardrobe.`);
     } catch (error) {
       setNotice(`The clothing item could not be restored: ${error.message}`);
     }
   }
 
   function permanentlyDelete(item) {
-    Alert.alert(
-      'Delete permanently?',
-      `${item.name} and its saved clothing photo will be permanently removed.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete permanently',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await onWardrobeChange(permanentlyDeleteItem(wardrobeState, item.id));
-              if (item.photoUri) await deleteWardrobePhoto(item.photoUri);
-              setNotice('');
-            } catch (error) {
-              setNotice(`The item was removed, but cleanup did not finish: ${error.message}`);
-            }
-          },
-        },
-      ],
-    );
+    setDeletionError('');
+    setPendingDeletion({ id: item.id, name: item.name, permanent: true });
   }
 
   async function switchMode(nextMode) {
@@ -888,11 +893,39 @@ export default function WardrobeScreen({
           )}
         </View>
       </ScrollView>
+      <Modal visible={Boolean(pendingDeletion)} transparent animationType="none" onRequestClose={cancelDeletion}>
+        <View style={styles.confirmBackdrop}>
+          <View accessibilityViewIsModal style={styles.confirmPanel}>
+            <Text accessibilityRole="header" style={styles.confirmTitle}>
+              {pendingDeletion?.permanent ? 'Delete permanently?' : 'Move to Recently Deleted?'}
+            </Text>
+            <Text style={styles.confirmCopy}>
+              {pendingDeletion?.permanent
+                ? `${pendingDeletion.name} and its saved clothing photo will be permanently removed. This cannot be undone.`
+                : `${pendingDeletion?.name || 'This piece'} will be removed from your active wardrobe and outfit suggestions. You can restore it from Recently Deleted for up to 30 days.`}
+            </Text>
+            {deletionError ? <Text accessibilityRole="alert" style={styles.formError}>{deletionError}</Text> : null}
+            <View style={styles.confirmActions}>
+              <ActionButton title="Cancel" secondary onPress={cancelDeletion} disabled={deleting} />
+              <Pressable accessibilityRole="button" accessibilityState={{ disabled: deleting, busy: deleting }} disabled={deleting} onPress={confirmDeletion} style={[styles.confirmDelete, deleting && styles.disabled]}>
+                <Text style={styles.confirmDeleteText}>{deleting ? 'Deleting…' : pendingDeletion?.permanent ? 'Delete permanently' : 'Move to Recently Deleted'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  confirmBackdrop: { flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#00000066' },
+  confirmPanel: { width: '100%', maxWidth: 460, padding: 24, gap: 18, backgroundColor: palette.paper, borderRadius: 8 },
+  confirmTitle: { color: palette.ink, fontSize: 23, fontWeight: '700' },
+  confirmCopy: { color: palette.muted, fontSize: 15, lineHeight: 23 },
+  confirmActions: { gap: 10 },
+  confirmDelete: { minHeight: 48, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 3, backgroundColor: COLORS.error },
+  confirmDeleteText: { color: palette.paper, fontSize: 14, fontWeight: '700', textAlign: 'center' },
   savedCard: { padding: 14, gap: 10, marginBottom: 16, backgroundColor: palette.soft },
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { flexGrow: 1, paddingBottom: 30 },

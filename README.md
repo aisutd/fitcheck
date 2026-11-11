@@ -18,6 +18,15 @@ npm run web
 
 `npm run ios` and `npm run android` start Expo for those platforms. A physical phone needs reachable LAN service URLs in `.env.local`; `localhost` on a phone refers to the phone. Native modules require the compatible Expo Go/development build. No simulator testing is claimed.
 
+Run these commands from `fitcheck`, not `fitcheck/privacy-demo`. The standalone
+privacy demo has its own `.env.local`; Expo does not read that file for the
+integrated app. Put the same public Supabase URL and publishable key in
+`fitcheck/.env.local`, together with `EXPO_PUBLIC_ACTIVITY_API_URL=http://127.0.0.1:8000`.
+Configure `services/privacy/.env.local` using its example. `npm run web` starts
+the configured local privacy backend before opening the integrated app on port
+8081. It uses `fitcheck/.venv`, or the existing `privacy-demo/ai-model/.venv`.
+`npm run privacy:server` starts only the backend. Restart `npm run web` after setup.
+
 You can use the quiz, manual wardrobe, avatar, local outfit recommendations, saved looks and travel planner without external API keys. Open Wardrobe → Demo Mode to explore authored sample clothes. Personal and sample closets remain separate. Weather is manually selected in Refine; the quiz’s weather preferences affect known garment attributes.
 
 The homepage exposes Search and Privacy & data. Outfit details and personal clothing cards expose try-on and photo analysis. Wardrobe → Collections & wishlist preserves the recognition contributor’s favorites, laundry, wear counts, filters, sample photos and bulk wishlist transfers. Set suitable occasions in the main wardrobe form before a new item can appear in recommendations. Recognition results are editable suggestions, never ground truth.

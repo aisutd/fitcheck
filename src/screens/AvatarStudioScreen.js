@@ -1,16 +1,20 @@
-import { palette } from '../theme/tokens';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import AvatarModel from '../features/avatar/AvatarFigure';
+import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber/native';
 import { StatusBar } from 'expo-status-bar';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   PanResponder,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+
+const { resolveRenderQuality, renderSettings } = require('../features/avatar/renderQuality');
 
 const SKIN_TONES = [
   { id: 'deep', label: 'Deep', color: '#70432F' },
@@ -40,127 +44,17 @@ const OUTFIT_COLORS = [
   { id: 'plum', label: 'Plum', color: '#79556F' },
 ];
 
-const SKIN_COLOR = Object.fromEntries(SKIN_TONES.map(({ id, color }) => [id, color]));
-const HAIR_COLOR = Object.fromEntries(HAIR_COLORS.map(({ id, color }) => [id, color]));
-const OUTFIT_COLOR = Object.fromEntries(OUTFIT_COLORS.map(({ id, color }) => [id, color]));
-const FRAME_SCALE = { petite: 0.94, average: 1, tall: 1.07 };
 const CAMERA_DISTANCE = { min: 3.7, max: 6, initial: 4.8, step: 0.35 };
 
-function AvatarModel({ customization, yaw }) {
-  const skin = SKIN_COLOR[customization.skinTone];
-  const hair = HAIR_COLOR[customization.hairColor];
-
-  return (
-    <group rotation={[0, yaw, 0]} scale={[1, FRAME_SCALE[customization.bodyFrame], 1]}>
-      <mesh position={[0, -1.42, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[1.65, 40]} />
-        <meshStandardMaterial color="#DCE3DA" roughness={1} />
-      </mesh>
-
-      <mesh position={[-0.16, -0.47, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.095, 0.78, 18]} />
-        <meshStandardMaterial color="#343B38" roughness={0.85} />
-      </mesh>
-      <mesh position={[0.16, -0.47, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.095, 0.78, 18]} />
-        <meshStandardMaterial color="#343B38" roughness={0.85} />
-      </mesh>
-      <mesh position={[-0.16, -0.91, 0.045]} castShadow>
-        <boxGeometry args={[0.2, 0.16, 0.38]} />
-        <meshStandardMaterial color="#EEECE5" roughness={0.8} />
-      </mesh>
-      <mesh position={[0.16, -0.91, 0.045]} castShadow>
-        <boxGeometry args={[0.2, 0.16, 0.38]} />
-        <meshStandardMaterial color="#EEECE5" roughness={0.8} />
-      </mesh>
-
-      <mesh position={[0, 0.48, 0]} castShadow>
-        <cylinderGeometry args={[0.29, 0.32, 0.77, 24]} />
-        <meshStandardMaterial color={OUTFIT_COLOR[customization.outfitColor]} roughness={0.8} />
-      </mesh>
-      <mesh position={[0, -0.07, 0]} castShadow>
-        <cylinderGeometry args={[0.3, 0.24, 0.3, 20]} />
-        <meshStandardMaterial color="#343B38" roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 0.91, 0]} castShadow>
-        <cylinderGeometry args={[0.11, 0.11, 0.18, 16]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-
-      <mesh position={[-0.37, 0.54, 0]} rotation={[0, 0, -0.12]} castShadow>
-        <cylinderGeometry args={[0.11, 0.085, 0.53, 16]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.37, 0.54, 0]} rotation={[0, 0, 0.12]} castShadow>
-        <cylinderGeometry args={[0.11, 0.085, 0.53, 16]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[-0.4, 0.23, 0]} castShadow>
-        <sphereGeometry args={[0.095, 16, 12]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.4, 0.23, 0]} castShadow>
-        <sphereGeometry args={[0.095, 16, 12]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.265, 28, 20]} />
-        <meshStandardMaterial color={skin} roughness={0.88} />
-      </mesh>
-      <mesh position={[-0.085, 1.235, 0.242]}>
-        <sphereGeometry args={[0.027, 12, 10]} />
-        <meshStandardMaterial color="#342C28" roughness={0.75} />
-      </mesh>
-      <mesh position={[0.085, 1.235, 0.242]}>
-        <sphereGeometry args={[0.027, 12, 10]} />
-        <meshStandardMaterial color="#342C28" roughness={0.75} />
-      </mesh>
-      <mesh position={[0, 1.17, 0.255]}>
-        <sphereGeometry args={[0.027, 12, 10]} />
-        <meshStandardMaterial color={skin} roughness={0.88} />
-      </mesh>
-      <mesh position={[0, 1.105, 0.242]} scale={[1, 0.24, 0.35]}>
-        <sphereGeometry args={[0.055, 14, 8]} />
-        <meshStandardMaterial color="#75483A" roughness={0.8} />
-      </mesh>
-      <mesh position={[-0.263, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.052, 12, 10]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.263, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.052, 12, 10]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 1.37, 0]} scale={[1.03, 0.56, 1.04]} castShadow>
-        <sphereGeometry args={[0.27, 24, 16]} />
-        <meshStandardMaterial color={hair} roughness={0.95} />
-      </mesh>
-      {customization.hairStyle === 'long' ? (
-        <mesh position={[0, 1.07, -0.13]} scale={[0.83, 1.45, 0.48]} castShadow>
-          <sphereGeometry args={[0.22, 20, 16]} />
-          <meshStandardMaterial color={hair} roughness={0.95} />
-        </mesh>
-      ) : null}
-      {customization.hairStyle === 'curly'
-        ? [-0.17, 0, 0.17].map((x, index) => (
-          <mesh key={x} position={[x, 1.4 + (index === 1 ? 0.04 : 0), 0]} castShadow>
-            <sphereGeometry args={[0.115, 14, 12]} />
-            <meshStandardMaterial color={hair} roughness={0.95} />
-          </mesh>
-        ))
-        : null}
-    </group>
-  );
-}
 
 function CameraDistance({ distance }) {
-  const { camera } = useThree();
+  const { camera, invalidate } = useThree();
   useEffect(() => {
     camera.position.set(0, 0.12, distance);
     camera.lookAt(0, 0.12, 0);
     camera.updateProjectionMatrix();
-  }, [camera, distance]);
+    invalidate();
+  }, [camera, distance, invalidate]);
   return null;
 }
 
@@ -222,6 +116,7 @@ export default function AvatarStudioScreen({
   customization,
   storageError = '',
   onCustomizationChange,
+  onClose,
 }) {
   const [yaw, setYaw] = useState(0);
   const [distance, setDistance] = useState(CAMERA_DISTANCE.initial);
@@ -230,6 +125,13 @@ export default function AvatarStudioScreen({
   const [renderError, setRenderError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [qualityMode, setQualityMode] = useState('auto');
+  const [quality, setQuality] = useState('low');
+  const [reduceMotion, setReduceMotion] = useState(true);
+  const [startedAt] = useState(() => Date.now());
+  const renderStarted = useRef(startedAt);
+  const graphicsLimit = useRef(0);
+  const settings = renderSettings(quality);
   const yawRef = useRef(yaw);
   const gestureStartYaw = useRef(0);
 
@@ -245,9 +147,9 @@ export default function AvatarStudioScreen({
     return () => clearTimeout(timeout);
   }, [renderAttempt, rendererReady, renderError]);
 
-  // PanResponder stores these callbacks; refs are read only when a gesture fires.
-  /* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization */
-  const panResponder = useMemo(() => PanResponder.create({
+  // Refs below are read only by native gesture callbacks, never during render.
+  // eslint-disable-next-line react-hooks/refs
+  const [panResponder] = useState(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 3,
     onPanResponderGrant: () => {
       gestureStartYaw.current = yawRef.current;
@@ -255,8 +157,25 @@ export default function AvatarStudioScreen({
     onPanResponderMove: (_, gesture) => {
       setYaw(gestureStartYaw.current + gesture.dx * 0.012);
     },
-  }), []);
-  /* eslint-enable react-hooks/refs, react-hooks/preserve-manual-memoization */
+  }));
+
+  useEffect(() => {
+    let active = true;
+    let eventReceived = false;
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      eventReceived = true;
+      if (active) setReduceMotion(enabled);
+    });
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (active && !eventReceived) setReduceMotion(enabled);
+    }).catch(() => {});
+    return () => { active = false; subscription.remove(); };
+  }, []);
+
+  function changeQuality(mode) {
+    setQualityMode(mode);
+    setQuality(resolveRenderQuality(mode, graphicsLimit.current));
+  }
 
   async function updateCustomization(key, value) {
     const nextCustomization = { ...customization, [key]: value };
@@ -282,6 +201,8 @@ export default function AvatarStudioScreen({
   }
 
   function retryRenderer() {
+    renderStarted.current = Date.now();
+    setQuality('low');
     setRendererReady(false);
     setRenderError('');
     setRenderAttempt((current) => current + 1);
@@ -302,20 +223,27 @@ export default function AvatarStudioScreen({
   );
 
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.topBar}>
             <View>
-              <Text style={styles.eyebrow}>AVATAR STUDIO</Text>
+              <Text style={styles.eyebrow}>FITCHECK · AVATAR STUDIO</Text>
               <Text style={styles.title}>Make it yours.</Text>
             </View>
-
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Continue to outfit suggestions"
+              onPress={onClose}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>See outfits</Text>
+            </Pressable>
           </View>
 
           <Text style={styles.subtitle}>
-            A customizable, stylized 3D avatar. Drag to turn; use the camera controls for precise, accessible adjustments.
+            Make this avatar yours, or continue to outfits. Use the buttons below to adjust the view.
           </Text>
           <Text style={styles.rendererLabel}>INTERACTIVE 3D · LOCALLY GENERATED MODEL</Text>
 
@@ -335,14 +263,16 @@ export default function AvatarStudioScreen({
                   }}
                   fallback={rendererFallback}
                 >
-                  <View style={styles.canvas} {...panResponder.panHandlers}>
+                  <View style={styles.canvas} {...(reduceMotion ? {} : panResponder.panHandlers)}>
                     <Canvas
                       camera={{ position: [0, 0.12, CAMERA_DISTANCE.initial], fov: 34 }}
-                      dpr={[1, 1.5]}
+                      dpr={settings.dpr}
                       frameloop="demand"
                       gl={{ antialias: false, powerPreference: 'low-power' }}
                       onCreated={({ gl }) => {
-                        gl.setClearColor(palette.illustration, 1);
+                        graphicsLimit.current = gl.capabilities.maxTextureSize;
+                        setQuality(resolveRenderQuality(qualityMode, gl.capabilities.maxTextureSize, Date.now() - renderStarted.current));
+                        gl.setClearColor('#E8EDE6', 1);
                         setRendererReady(true);
                       }}
                       style={styles.canvasElement}
@@ -350,19 +280,30 @@ export default function AvatarStudioScreen({
                       <CameraDistance distance={distance} />
                       <ambientLight intensity={1.8} />
                       <directionalLight position={[3, 4, 5]} intensity={2.2} />
-                      <AvatarModel customization={customization} yaw={yaw} />
+                      <AvatarModel customization={customization} yaw={yaw} segments={settings.segments} />
                     </Canvas>
                   </View>
                 </AvatarRenderBoundary>
                 {!rendererReady ? (
                   <View pointerEvents="none" style={styles.loadingOverlay}>
-                    <ActivityIndicator color="#27483C" />
+                    <ActivityIndicator color="#7040B8" />
                     <Text style={styles.loadingText}>Preparing your 3D avatar…</Text>
                   </View>
                 ) : null}
               </>
             )}
           </View>
+
+          <Text style={styles.controlLabel}>PREVIEW QUALITY</Text>
+          <View style={styles.choiceList}>
+            {[{ id: 'auto', label: 'Auto' }, { id: 'low', label: 'Low' }, { id: 'standard', label: 'Standard' }].map((item) => (
+              <ChoiceChip key={item.id} item={item} selected={qualityMode === item.id} onPress={() => changeQuality(item.id)} />
+            ))}
+          </View>
+          <Text accessibilityLiveRegion="polite" style={styles.saveStatus}>
+            {quality === 'low' ? 'Lightweight preview' : 'Standard preview'}
+            {reduceMotion ? ' · Reduced motion: use the view buttons.' : ' · Drag or use the view buttons.'}
+          </Text>
 
           <View style={styles.cameraControls}>
             <CameraButton label="Rotate left" hint="Turn the avatar 45 degrees left" onPress={() => rotateBy(-Math.PI / 4)} />
@@ -458,43 +399,43 @@ export default function AvatarStudioScreen({
           </Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: palette.background },
+  safeArea: { flex: 1, backgroundColor: '#FCFBF9' },
   scrollContent: { flexGrow: 1, paddingBottom: 28 },
-  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 22 },
+  content: { width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 22 },
   topBar: {
     minHeight: 78,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: palette.line,
+    borderBottomColor: '#E5E2DD',
   },
-  eyebrow: { color: palette.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
-  title: { marginTop: 5, color: palette.ink, fontFamily: 'serif', fontSize: 29, fontWeight: '600' },
+  eyebrow: { color: '#627A68', fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
+  title: { marginTop: 5, color: '#171717', fontFamily: 'serif', fontSize: 29, fontWeight: '600' },
   closeButton: {
     minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: 13,
     borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 3,
-    backgroundColor: palette.paper,
+    borderColor: '#E5E2DD',
+    borderRadius: 8,
+    backgroundColor: '#FAFBF8',
   },
-  closeButtonText: { color: palette.ink, fontSize: 12, fontWeight: '800' },
-  subtitle: { marginTop: 15, color: palette.muted, fontSize: 13, lineHeight: 19 },
-  rendererLabel: { marginTop: 17, marginBottom: 8, color: palette.ink, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  closeButtonText: { color: '#7040B8', fontSize: 12, fontWeight: '800' },
+  subtitle: { marginTop: 15, color: '#666666', fontSize: 13, lineHeight: 19 },
+  rendererLabel: { marginTop: 17, marginBottom: 8, color: '#171717', fontSize: 9, fontWeight: '800', letterSpacing: 1 },
   stage: {
     height: 330,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 3,
-    backgroundColor: palette.illustration,
+    borderColor: '#E5E2DD',
+    borderRadius: 10,
+    backgroundColor: '#E8EDE6',
   },
   canvas: { flex: 1 },
   canvasElement: { flex: 1 },
@@ -503,70 +444,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: palette.illustration,
+    backgroundColor: '#E8EDE6',
   },
-  loadingText: { color: palette.muted, fontSize: 12, fontWeight: '600' },
+  loadingText: { color: '#666666', fontSize: 12, fontWeight: '600' },
   rendererError: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
-  rendererErrorTitle: { color: palette.ink, fontSize: 17, fontWeight: '800', textAlign: 'center' },
-  rendererErrorCopy: { marginTop: 9, color: palette.muted, fontSize: 12, lineHeight: 18, textAlign: 'center' },
+  rendererErrorTitle: { color: '#171717', fontSize: 17, fontWeight: '800', textAlign: 'center' },
+  rendererErrorCopy: { marginTop: 9, color: '#666666', fontSize: 12, lineHeight: 18, textAlign: 'center' },
   retryButton: {
     minHeight: 44,
     justifyContent: 'center',
     marginTop: 14,
     paddingHorizontal: 16,
-    borderRadius: 3,
-    backgroundColor: palette.ink,
+    borderRadius: 8,
+    backgroundColor: '#7040B8',
   },
-  retryButtonText: { color: palette.paper, fontSize: 12, fontWeight: '800' },
+  retryButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   cameraControls: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 9 },
   cameraButton: {
-    minHeight: 42,
+    minHeight: 44,
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 11,
     borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 3,
-    backgroundColor: palette.paper,
+    borderColor: '#E5E2DD',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
   },
-  cameraButtonPressed: { backgroundColor: palette.soft },
-  cameraButtonText: { color: palette.ink, fontSize: 10, fontWeight: '800' },
-  errorNotice: { marginTop: 12, padding: 12, borderRadius: 3, backgroundColor: '#F9E8E4' },
+  cameraButtonPressed: { backgroundColor: '#E7EDE6' },
+  cameraButtonText: { color: '#7040B8', fontSize: 10, fontWeight: '800' },
+  errorNotice: { marginTop: 12, padding: 12, borderRadius: 8, backgroundColor: '#F9E8E4' },
   errorText: { color: '#9B3F35', fontSize: 12, lineHeight: 17 },
-  saveStatus: { marginTop: 11, color: palette.muted, fontSize: 11 },
+  saveStatus: { marginTop: 11, color: '#666666', fontSize: 11 },
   customizationCard: {
     gap: 10,
     marginTop: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 3,
-    backgroundColor: palette.paper,
+    borderColor: '#E5E2DD',
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
   },
-  sectionTitle: { color: palette.ink, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  controlLabel: { marginTop: 5, color: palette.muted, fontSize: 9, fontWeight: '800', letterSpacing: 0.9 },
+  sectionTitle: { color: '#171717', fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  controlLabel: { marginTop: 5, color: '#666666', fontSize: 9, fontWeight: '800', letterSpacing: 0.9 },
   choiceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   choiceChip: {
-    minHeight: 42,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
     paddingHorizontal: 11,
     borderWidth: 1,
-    borderColor: palette.line,
+    borderColor: '#E5E2DD',
     borderRadius: 22,
-    backgroundColor: palette.paper,
+    backgroundColor: '#FAFBF8',
   },
-  choiceChipSelected: { borderColor: palette.ink, backgroundColor: palette.ink },
+  choiceChipSelected: { borderColor: '#7040B8', backgroundColor: '#7040B8' },
   choiceChipDisabled: { opacity: 0.65 },
-  choiceText: { color: palette.ink, fontSize: 10, fontWeight: '700' },
-  choiceTextSelected: { color: palette.paper },
+  choiceText: { color: '#171717', fontSize: 10, fontWeight: '700' },
+  choiceTextSelected: { color: '#FFFFFF' },
   swatch: { width: 13, height: 13, borderRadius: 7, borderWidth: 1, borderColor: '#00000020' },
-  disclaimer: { marginTop: 14, color: palette.muted, fontSize: 10, lineHeight: 16 },
+  disclaimer: { marginTop: 14, color: '#666666', fontSize: 10, lineHeight: 16 },
 });

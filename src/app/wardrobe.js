@@ -1,2 +1,2 @@
-import { MainScreen } from '../state/FitCheckProvider';
-export default function Screen() { return <MainScreen screen="wardrobe" />; }
+import App from '../../App';
+export default function Route() { return <App activeScreen='wardrobe' />; }

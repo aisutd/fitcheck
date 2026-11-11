@@ -27,7 +27,7 @@ function verifyRecommendation(occasion, wardrobe, attempt) {
   assert.ok(itemIds.every((id) => wardrobeIds.has(id)), 'every returned ID must exist in the wardrobe');
   assert.ok(categories.includes('top'), 'a complete outfit needs a top');
   assert.ok(categories.includes('bottom'), 'a complete outfit needs a bottom');
-  assert.ok(categories.includes('shoes'), 'a complete outfit needs shoes');
+  if (occasion !== 'Sleepwear') assert.ok(categories.includes('shoes'), 'a complete daytime outfit needs shoes');
   assert.ok(outfit.items.every((item) => item.occasions.includes(occasion)));
   assert.ok(categories.filter((category) => category === 'layer').length <= 1);
   checks += 1;
@@ -50,8 +50,8 @@ for (const occasion of OCCASIONS) {
     1,
   );
 
-  assert.ok(firstOutfit.items.length >= 3, `${occasion} should have a complete sample outfit`);
-  assert.ok(nextOutfit.items.length >= 3, `${occasion} should have another complete sample outfit`);
+  assert.ok(firstOutfit.items.length >= (occasion === 'Sleepwear' ? 2 : 3), `${occasion} should have a complete sample outfit`);
+  assert.ok(nextOutfit.items.length >= (occasion === 'Sleepwear' ? 2 : 3), `${occasion} should have another complete sample outfit`);
   assert.notDeepEqual(
     nextOutfit.items.map((item) => item.id).sort(),
     firstOutfit.items.map((item) => item.id).sort(),

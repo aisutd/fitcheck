@@ -142,7 +142,8 @@ state = addPersonalItem(createEmptyWardrobeState(), fixture());
 state = moveToRecentlyDeleted(state, 'top-linen');
 state = permanentlyDeleteItem(state, 'top-linen');
 check(state.recentlyDeleted.length === 0, 'permanent deletion removes a Recently Deleted record');
-check(OCCASIONS.length === 5, 'wardrobe occasion options stay aligned with Suggest');
+check(JSON.stringify(OCCASIONS) === JSON.stringify(require('../src/features/suggest/outfitRecommendations').OCCASIONS), 'wardrobe occasion options stay aligned with Suggest');
+check(['Work', 'Date Night', 'Casual', 'Formal', 'Gym'].every((occasion) => OCCASIONS.includes(occasion)), 'existing occasion tags remain supported');
 
 // Existing untagged records remain readable, but new edits must be outfit-ready.
 const untagged = fixture({ occasions: [] });

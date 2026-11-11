@@ -1,0 +1,159 @@
+name: FitCheck CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'integration/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      npm-directories: ${{ steps.npm.outputs.directories }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Check dependency compatibility
+        run: python -m pip check
+
+      - name: Check Python syntax
+        run: git ls-files -z -- '*.py' | xargs -0 --no-run-if-empty python -m py_compile
+
+      # Run services separately: privacy and recognition both have a module named server.
+      # test_model.py is an explicit model-download smoke script, not a unit suite.
+      - name: Privacy tests
+        working-directory: services/privacy
+        run: python -m unittest test_connection -v
+
+      - name: Recognition plumbing and training tests
+        working-directory: services/recognition
+        run: python -m unittest test_attributes test_evaluate_tagger test_remote_images test_train_categories -v
+
+      - name: Try-on contract tests
+        working-directory: services/tryon
+        run: python -m pytest tests -q
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+
+      - name: Find npm projects
+        id: npm
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import PurePosixPath
+          import subprocess
+
+          tracked = subprocess.check_output(["git", "ls-files", "-z"]).decode().split("\0")
+          directories = sorted({
+              str(PurePosixPath(path).parent)
+              for path in tracked if PurePosixPath(path).name == "package.json"
+          })
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"directories={json.dumps(directories)}\n")
+          PY
+
+  npm:
+    name: npm CI (${{ matrix.directory }})
+    needs: python
+    if: needs.python.outputs.npm-directories != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJSON(needs.python.outputs.npm-directories) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    env:
+      CI: 'true'
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install search contract test dependencies
+        if: matrix.directory == '.'
+        run: |
+          npm ci --prefix services/search
+          npm ci --prefix services/analysis
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Type check
+        run: npm run typecheck --if-present
+
+      - name: Test
+        run: npm run test --if-present
+
+      - name: Check service syntax
+        run: npm run check --if-present
+
+      - name: Export web bundle
+        if: matrix.directory == '.'
+        run: npm run build:web -- --output-dir dist-web
+
+      - name: Export iOS bundle
+        if: matrix.directory == '.'
+        run: npm run build:ios -- --output-dir dist-ios
+
+      - name: Install browser
+        if: matrix.directory == '.'
+        run: npx playwright install --with-deps chromium
+
+      - name: Web journeys
+        if: matrix.directory == '.'
+        run: npm run test:web
+
+  ci:
+    name: CI
+    if: always()
+    needs: [python, npm]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require successful checks
+        env:
+          PYTHON_RESULT: ${{ needs.python.result }}
+          NPM_RESULT: ${{ needs.npm.result }}
+        run: |
+          test "$PYTHON_RESULT" = success
+          test "$NPM_RESULT" = success || test "$NPM_RESULT" = skipped

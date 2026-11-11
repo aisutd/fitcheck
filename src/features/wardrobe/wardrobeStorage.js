@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+import { importLegacyCollections } from './legacyCollections';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -22,6 +24,7 @@ function getPhotoDirectory() {
 }
 
 function removeInternalPhoto(uri) {
+  if (Platform.OS === 'web') return;
   const directory = getPhotoDirectory();
   const prefix = directory.uri.endsWith('/') ? directory.uri : `${directory.uri}/`;
   if (!uri || !uri.startsWith(prefix)) return;
@@ -32,7 +35,9 @@ function removeInternalPhoto(uri) {
 export async function loadWardrobeState() {
   const raw = await AsyncStorage.getItem(WARDROBE_KEY);
   if (raw === null) {
-    return { state: createEmptyWardrobeState(), cleanupWarning: '' };
+    const state = await importLegacyCollections(createEmptyWardrobeState());
+    if (state.personalItems.length || state.wishlistItems.length) await saveWardrobeState(state);
+    return { state, cleanupWarning: '' };
   }
 
   let state;
@@ -75,6 +80,14 @@ export async function saveWardrobePhoto(sourceUri, fileId) {
   if (!sourceUri || typeof sourceUri !== 'string') {
     throw new Error('Choose a valid clothing photo before saving.');
   }
+  if (Platform.OS === 'web') {
+    const context = ImageManipulator.ImageManipulator.manipulate(sourceUri);
+    context.resize({ width: 900, height: null });
+    const image = await context.renderAsync();
+    const processed = await image.saveAsync({ format: ImageManipulator.SaveFormat.JPEG, compress: 0.72, base64: true });
+    if (!processed.base64 || processed.base64.length > 1500000) throw new Error('This photo is too large to save in this browser. Please choose a smaller clothing image.');
+    return `data:image/jpeg;base64,${processed.base64}`;
+  }
   const directory = getPhotoDirectory();
   if (!directory.exists) directory.create({ idempotent: true, intermediates: true });
 
@@ -104,6 +117,7 @@ export function deleteWardrobePhoto(uri) {
 
 export function wardrobePhotoExists(uri) {
   if (!uri) return false;
+  if (/^(https?:\/\/|public-photo:|data:image\/)/.test(uri)) return true;
   try {
     return new File(uri).exists;
   } catch {

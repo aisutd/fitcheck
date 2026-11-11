@@ -15,7 +15,10 @@
           "microphonePermission": false
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-sharing",
+      "expo-font",
+      "expo-asset"
     ],
     "ios": {
       "supportsTablet": true
@@ -29,8 +32,7 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png",
-      "output": "single"
+      "favicon": "./assets/favicon.png"
     },
     "scheme": "fitcheck"
   }

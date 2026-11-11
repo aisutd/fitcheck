@@ -1,14 +1,20 @@
-import GarmentIllustration from '../components/GarmentIllustration';
+import { Garment } from '../components/OutfitArtwork';
 import { palette } from '../theme/tokens';
+import { garmentColor } from '../features/wardrobe/garmentColors';
+import { itemImageSource, resolveImageUri } from '../features/collections/photoSource';
+import { router, useLocalSearchParams } from 'expo-router';
+import { processPhoto, importPhotoUrl } from '../features/recognition/photoService';
+import { applyRecognition } from '../features/recognition/recognitionAdapter';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
   Image,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -37,6 +43,7 @@ import {
 
 const CATEGORY_LABELS = {
   all: 'All pieces',
+  onepiece: 'Dresses & suits',
   top: 'Tops',
   bottom: 'Bottoms',
   shoes: 'Shoes',
@@ -53,43 +60,18 @@ const WEATHER_TAGS = [
   { id: 'rainy', label: 'Rainy' },
 ];
 const COLORS = {
-  background: palette.background,
-  ink: palette.ink,
-  muted: palette.muted,
-  green: palette.ink,
-  lime: palette.ink,
-  line: palette.line,
-  white: palette.paper,
+  background: '#FCFBF9',
+  ink: '#171717',
+  muted: '#666666',
+  green: '#7040B8',
+  lime: '#F3EDFC',
+  line: '#E5E2DD',
+  white: '#FFFFFF',
   error: '#9B3F35',
 };
 
 function createItemId() {
   return `item-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function blankItem(request = {}) {
-  return {
-    id: createItemId(),
-    name: '',
-    category: WARDROBE_CATEGORIES.includes(request.category) ? request.category : 'top',
-    clothingType: '',
-    color: '',
-    colorFamily: '',
-    colorHex: '',
-    fit: '',
-    size: '',
-    sizeSystem: '',
-    styleTags: [],
-    seasons: [],
-    weatherTags: [],
-    weatherNotes: '',
-    waterproof: false,
-    occasions: OCCASIONS.includes(request.occasion) ? [request.occasion] : [],
-    available: true,
-    photoUri: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
 }
 
 function toggleValue(values, value) {
@@ -152,16 +134,15 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
         {item.photoUri && !photoMissing ? (
           <Image
             accessibilityLabel={`${item.name} clothing photo`}
-            source={{ uri: item.photoUri }}
+            source={itemImageSource(item.photoUri)}
             style={styles.itemImage}
             resizeMode="cover"
             onError={onEdit.markPhotoMissing}
           />
         ) : (
-          <View style={[styles.itemPlaceholder, { backgroundColor: palette.illustration }]}>
-            {!photoMissing && ['top', 'bottom', 'shoes', 'layer'].includes(item.category) ? (
-              <GarmentIllustration category={item.category} />
-            ) : <Text style={styles.itemPlaceholderText}>{photoMissing ? 'PHOTO MISSING' : item.category.toUpperCase()}</Text>}
+          <View style={styles.itemPlaceholder}>
+            <Garment item={{ ...item, photoUri: null }} />
+            {photoMissing ? <Text style={styles.itemPlaceholderText}>Photo unavailable</Text> : null}
           </View>
         )}
       </View>
@@ -179,7 +160,7 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
         </Text>
         {item.size ? <Text style={styles.itemMeta}>Size {item.size}{item.sizeSystem ? ` · ${item.sizeSystem}` : ''}</Text> : null}
         {mode === 'personal' && !item.occasions?.length ? <Text style={styles.missingPhotoText}>Choose an occasion in Edit to include this piece in outfits.</Text> : null}
-        {mode === 'demo' ? <Text style={styles.demoLabel}>DEMO EXAMPLE · CATEGORY ILLUSTRATION</Text> : !item.photoUri ? <Text style={styles.demoLabel}>CATEGORY ILLUSTRATION</Text> : null}
+        {mode === 'demo' ? <Text style={styles.demoLabel}>DEMO EXAMPLE</Text> : null}
         <View style={styles.itemActions}>
           <ActionButton
             title={item.available ? 'Mark unavailable' : 'Mark available'}
@@ -189,6 +170,8 @@ function WardrobeCard({ item, mode, onEdit, onToggleAvailability, onDelete, phot
           {mode === 'personal' ? (
             <>
               <ActionButton title="Edit" secondary onPress={onEdit.open} />
+              {item.photoUri ? <ActionButton title="Try on" secondary onPress={() => router.push({ pathname: '/try-on', params: { items: item.id } })} /> : null}
+              {item.photoUri ? <ActionButton title="Analyze photo" secondary onPress={() => router.push({ pathname: '/analysis', params: { items: item.id } })} /> : null}
               <ActionButton title="Delete" secondary onPress={onDelete} />
             </>
           ) : null}
@@ -202,20 +185,17 @@ export default function WardrobeScreen({
   wardrobeState,
   storageError = '',
   onWardrobeChange,
+  onClose,
   initialRequest = null,
-  onShowOutfits,
 }) {
+  const { item: initialItem } = useLocalSearchParams();
   const { mode } = wardrobeState;
   const demoItems = DEMO_ITEMS.map((item) => ({
     ...item,
     available: wardrobeState.demoAvailability[item.id] ?? true,
   }));
   const allItems = mode === 'demo' ? demoItems : wardrobeState.personalItems;
-  const [initialItem] = useState(() => mode === 'personal' && initialRequest?.itemId
-    ? wardrobeState.personalItems.find((item) => item.id === initialRequest.itemId) : null);
-  const [initialForm] = useState(() => initialItem ? { ...initialItem, styleTags: initialItem.styleTags || [], seasons: initialItem.seasons || [], weatherTags: initialItem.weatherTags || [] }
-    : mode === 'personal' && initialRequest?.category ? blankItem(initialRequest) : null);
-  const [view, setView] = useState(initialForm ? 'edit' : 'active');
+  const [view, setView] = useState(initialRequest ? 'edit' : 'active');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [colorFilter, setColorFilter] = useState('');
@@ -223,19 +203,29 @@ export default function WardrobeScreen({
   const [typeFilter, setTypeFilter] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState(null);
   const [sort, setSort] = useState('recent');
-  const [editingItem, setEditingItem] = useState(initialItem);
-  const [form, setForm] = useState(initialForm);
-  const [photoDraftUri, setPhotoDraftUri] = useState(initialItem?.photoUri || '');
-  const [savedMessage, setSavedMessage] = useState('');
+  const [editingItem, setEditingItem] = useState(null);
+  const [form, setForm] = useState(null);
+  const [photoDraftUri, setPhotoDraftUri] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [photoChanged, setPhotoChanged] = useState(false);
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [missingPhotos, setMissingPhotos] = useState([]);
   const [notice, setNotice] = useState('');
+  const [savedMessage, setSavedMessage] = useState('');
+  const [styleText, setStyleText] = useState('');
   const [pendingDeletion, setPendingDeletion] = useState(null);
   const [deletionError, setDeletionError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const deletionInFlight = useRef(false);
+
+  useEffect(() => {
+    const item = wardrobeState.personalItems.find((entry) => entry.id === (initialRequest?.itemId || initialItem));
+    if (item) openEditItem(item);
+    else if (initialRequest?.category && mode === 'personal') openNewItem(initialRequest);
+    // Apply deep-link selection once; edits remain in the review form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialItem]);
 
   const visibleItems = view === 'deleted'
     ? wardrobeState.recentlyDeleted
@@ -249,10 +239,34 @@ export default function WardrobeScreen({
       sort,
     });
 
-  function openNewItem() {
-    setEditingItem(null);
+  function openNewItem(request = {}) {
+    setStyleText('');
     setSavedMessage('');
-    setForm(blankItem());
+    setEditingItem(null);
+    setForm({
+      id: createItemId(),
+      name: '',
+      category: WARDROBE_CATEGORIES.includes(request.category) ? request.category : 'top',
+      clothingType: '',
+      color: '',
+      colorFamily: '',
+      colorHex: '',
+      fit: '',
+      size: '',
+      sizeSystem: '',
+      styleTags: [],
+      seasons: [],
+      weatherTags: [],
+      weatherNotes: '',
+      warmth: '',
+      coverage: '',
+      waterproof: false,
+      occasions: OCCASIONS.includes(request.occasion) ? [request.occasion] : [],
+      available: true,
+      photoUri: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
     setPhotoDraftUri('');
     setPhotoChanged(false);
     setFormError('');
@@ -260,6 +274,7 @@ export default function WardrobeScreen({
   }
 
   function openEditItem(item) {
+    setStyleText((item.styleTags || []).join(', '));
     setEditingItem(item);
     setForm({
       ...item,
@@ -269,7 +284,7 @@ export default function WardrobeScreen({
       occasions: item.occasions || [],
       waterproof: item.waterproof === true,
     });
-    setPhotoDraftUri(item.photoUri || '');
+    setPhotoDraftUri(resolveImageUri(item.photoUri) || '');
     setPhotoChanged(false);
     setFormError('');
     setView('edit');
@@ -320,6 +335,28 @@ export default function WardrobeScreen({
     }
   }
 
+  async function recognizePhoto() {
+    if (!photoDraftUri || busy) return;
+    setBusy(true); setFormError('');
+    try {
+      const { url, tags } = await processPhoto({ uri: photoDraftUri, fileName: 'clothing.jpg', mimeType: 'image/jpeg' });
+      if (!tags) throw new Error('Photo uploaded, but automatic recognition is unavailable. You can still enter details manually.');
+      setForm((current) => ({ ...applyRecognition(current, tags), recognitionPhotoUrl: url }));
+    } catch (error) { setFormError(error.message); }
+    finally { setBusy(false); }
+  }
+  async function importUrl() {
+    if (busy || !photoUrl.trim()) return;
+    setBusy(true); setFormError('');
+    try {
+      const result = await importPhotoUrl(photoUrl);
+      setPhotoDraftUri(result.url); setPhotoChanged(true);
+      setForm((current) => ({ ...(result.tags ? applyRecognition(current, result.tags) : current), recognitionPhotoUrl: result.url }));
+      if (result.tagging_error) setFormError(result.tagging_error);
+    } catch (error) { setFormError(error.message); }
+    finally { setBusy(false); }
+  }
+
   async function rotatePhoto(degrees) {
     if (!photoDraftUri) return;
     setBusy(true);
@@ -363,15 +400,15 @@ export default function WardrobeScreen({
         name: form.name.trim(),
         color: form.color.trim(),
         clothingType: form.clothingType.trim(),
-        styleTags: form.styleTags.filter(Boolean),
+        styleTags: styleText.split(',').map((tag) => tag.trim()).filter(Boolean),
+        colorHex: garmentColor(form.color, form.colorHex),
         weatherNotes: form.weatherNotes.trim(),
         photoUri,
         updatedAt: new Date().toISOString(),
       };
-      const nextState = editingItem
-        ? updatePersonalItem(wardrobeState, item)
-        : addPersonalItem(wardrobeState, item);
-      await onWardrobeChange(nextState);
+      await onWardrobeChange((current) => editingItem
+        ? updatePersonalItem(current, item)
+        : addPersonalItem(current, item));
       if (editingItem?.photoUri && editingItem.photoUri !== photoUri) {
         try {
           await deleteWardrobePhoto(editingItem.photoUri);
@@ -381,7 +418,7 @@ export default function WardrobeScreen({
       }
       setMissingPhotos((current) => current.filter((id) => id !== item.id));
       closeForm();
-      setSavedMessage(item.available ? `${item.name} is ready for ${item.occasions.join(', ')} outfit suggestions.` : `${item.name} is saved. Mark it available when you want it in outfit suggestions.`);
+      setSavedMessage(`${item.name} saved for ${item.occasions.join(', ')}. ${item.available ? 'Ready for outfit suggestions.' : 'Mark it available when you are ready to wear it.'}`);
     } catch (error) {
       if (newPhotoUri) {
         try {
@@ -401,7 +438,7 @@ export default function WardrobeScreen({
   async function toggleAvailability(item, available) {
     setNotice('');
     try {
-      await onWardrobeChange(setItemAvailability(wardrobeState, mode, item.id, available));
+      await onWardrobeChange((current) => setItemAvailability(current, mode, item.id, available));
     } catch (error) {
       setNotice(`Availability could not be updated: ${error.message}`);
     }
@@ -426,10 +463,9 @@ export default function WardrobeScreen({
     const item = items.find((entry) => entry.id === id);
     try {
       if (!item) throw new Error('This piece is no longer in this list. Close this dialog and check your wardrobe.');
-      const nextState = permanent
-        ? permanentlyDeleteItem(wardrobeState, id)
-        : moveToRecentlyDeleted(wardrobeState, id);
-      await onWardrobeChange(nextState);
+      await onWardrobeChange((current) => permanent
+        ? permanentlyDeleteItem(current, id)
+        : moveToRecentlyDeleted(current, id));
       setSavedMessage('');
       setNotice(permanent ? `${item.name} was permanently deleted.` : `${item.name} moved to Recently Deleted. You can restore it for up to 30 days.`);
       if (permanent && item.photoUri) {
@@ -450,7 +486,7 @@ export default function WardrobeScreen({
 
   async function restoreItem(item) {
     try {
-      await onWardrobeChange(restoreDeletedItem(wardrobeState, item.id));
+      await onWardrobeChange((current) => restoreDeletedItem(current, item.id));
       setNotice(`${item.name} restored to your wardrobe.`);
     } catch (error) {
       setNotice(`The clothing item could not be restored: ${error.message}`);
@@ -465,7 +501,7 @@ export default function WardrobeScreen({
   async function switchMode(nextMode) {
     setNotice('');
     try {
-      await onWardrobeChange(setWardrobeMode(wardrobeState, nextMode));
+      await onWardrobeChange((current) => setWardrobeMode(current, nextMode));
       setView('active');
       setCategory('');
     } catch (error) {
@@ -490,10 +526,23 @@ export default function WardrobeScreen({
   const dynamicTypes = [...new Set(allItems.map((item) => item.clothingType).filter(Boolean))];
 
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
+          <View style={styles.topBar}>
+            <Pressable accessibilityRole="button" onPress={onClose} style={styles.backButton}>
+              <Text style={styles.backText}>‹ Suggest</Text>
+            </Pressable>
+            <View style={styles.brandGroup}>
+              <View style={styles.brandMark}><Text style={styles.brandMarkText}>FC</Text></View>
+              <View>
+                <Text style={styles.brandName}>FITCHECK</Text>
+                <Text style={styles.brandCaption}>WARDROBE</Text>
+              </View>
+            </View>
+          </View>
+
           <View style={styles.hero}>
             <Text style={styles.eyebrow}>{mode === 'demo' ? 'EXPLORE THE SAMPLE CLOSET' : 'YOUR PERSONAL CLOSET'}</Text>
             <Text accessibilityRole="header" style={styles.title}>
@@ -506,6 +555,7 @@ export default function WardrobeScreen({
             </Text>
           </View>
 
+          <ActionButton title="Collections & wishlist · favorites, laundry and more" secondary onPress={() => router.push('/collections')} />
           <View style={styles.modeRow}>
             <Pressable
               accessibilityRole="button"
@@ -554,15 +604,11 @@ export default function WardrobeScreen({
           {storageError ? <Text accessibilityRole="alert" style={styles.errorBanner}>{storageError}</Text> : null}
           {notice ? <Text accessibilityRole="alert" style={styles.notice}>{notice}</Text> : null}
 
-          {savedMessage && view === 'active' ? <View style={styles.savedCard}>
-            <Text accessibilityLiveRegion="polite" style={styles.subtitle}>{savedMessage}</Text>
-            <ActionButton title="View outfits" onPress={onShowOutfits} />
-          </View> : null}
-
+          {savedMessage && view === 'active' ? <View style={styles.savedCard}><Text accessibilityLiveRegion="polite" style={styles.subtitle}>{savedMessage}</Text><ActionButton title="View outfits" onPress={onClose} /></View> : null}
           {view === 'edit' && form ? (
             <View style={styles.form}>
               <Text style={styles.formIntro}>
-                Add a name, category, and at least one occasion so this piece can appear in your outfit suggestions. Everything else is optional.
+                Add a name, category, and at least one occasion to use this piece in outfits. Everything else is optional.
               </Text>
               <Text style={styles.formLabel}>Item name *</Text>
               <TextInput
@@ -646,11 +692,11 @@ export default function WardrobeScreen({
               <Text style={styles.formLabel}>Style tags · comma separated</Text>
               <TextInput
                 accessibilityLabel="Style tags, optional"
-                onChangeText={(value) => updateForm('styleTags', value.split(',').map((tag) => tag.trim()).filter(Boolean))}
+                onChangeText={setStyleText}
                 placeholder="e.g. classic, workwear"
                 placeholderTextColor="#88928B"
                 style={styles.textInput}
-                value={form.styleTags.join(', ')}
+                value={styleText}
               />
               <ChoiceRow
                 label="Season"
@@ -670,6 +716,18 @@ export default function WardrobeScreen({
                   const id = WEATHER_TAGS.find((tag) => tag.label === label)?.id;
                   if (id) toggleFormList('weatherTags', id);
                 }}
+              />
+              <ChoiceRow
+                label="Warmth · optional, only when known"
+                values={['Light', 'Warm']}
+                selected={form.warmth || ''}
+                onSelect={(value) => updateForm('warmth', form.warmth === value ? '' : value)}
+              />
+              <ChoiceRow
+                label="Coverage · optional, only when known"
+                values={['Minimal', 'Moderate', 'More']}
+                selected={form.coverage || ''}
+                onSelect={(value) => updateForm('coverage', form.coverage === value ? '' : value)}
               />
               <Text style={styles.formLabel}>Weather notes · only what you know</Text>
               <TextInput
@@ -694,7 +752,15 @@ export default function WardrobeScreen({
                 <Text style={styles.checkLabel}>Waterproof (only if verified)</Text>
               </Pressable>
 
+              <Text style={styles.formLabel}>Material · optional</Text>
+              <TextInput accessibilityLabel="Material, optional" value={form.material || ''} onChangeText={(value) => updateForm('material', value)} style={styles.textInput} />
+              <Text style={styles.formLabel}>Pattern or design · optional</Text>
+              <TextInput accessibilityLabel="Pattern or design, optional" value={form.design || ''} onChangeText={(value) => updateForm('design', value)} style={styles.textInput} />
               <Text style={styles.formLabel}>Clothing photo · optional</Text>
+              <TextInput accessibilityLabel="Direct clothing image URL" value={photoUrl} onChangeText={setPhotoUrl} placeholder="https://…/clothing.jpg" style={styles.textInput} />
+              <ActionButton title="Import image URL" onPress={importUrl} disabled={busy || !photoUrl.trim()} secondary />
+              {photoDraftUri ? <ActionButton title={busy ? 'Processing photo…' : 'Recognize clothing'} onPress={recognizePhoto} disabled={busy} secondary /> : null}
+              {form.recognition ? <View><Text style={styles.formIntro}>Review AI details before saving. Choose suitable occasions below so this piece can appear in recommendations.</Text><Text style={styles.itemMeta}>{JSON.stringify(form.recognition, null, 2)}</Text></View> : null}
               {photoDraftUri ? (
                 <Image
                   accessibilityLabel="Preview of the clothing photo"
@@ -914,7 +980,7 @@ export default function WardrobeScreen({
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -927,9 +993,10 @@ const styles = StyleSheet.create({
   confirmDelete: { minHeight: 48, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 3, backgroundColor: COLORS.error },
   confirmDeleteText: { color: palette.paper, fontSize: 14, fontWeight: '700', textAlign: 'center' },
   savedCard: { padding: 14, gap: 10, marginBottom: 16, backgroundColor: palette.soft },
+
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { flexGrow: 1, paddingBottom: 30 },
-  content: { width: '100%', maxWidth: 900, alignSelf: 'center', paddingHorizontal: 20 },
+  content: { width: '100%', maxWidth: 680, alignSelf: 'center', paddingHorizontal: 20 },
   topBar: {
     minHeight: 62,
     flexDirection: 'row',
@@ -941,12 +1008,12 @@ const styles = StyleSheet.create({
   backButton: { minHeight: 44, justifyContent: 'center', paddingRight: 8 },
   backText: { color: COLORS.green, fontSize: 12, fontWeight: '700' },
   brandGroup: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  brandMark: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 3, backgroundColor: COLORS.green },
+  brandMark: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: COLORS.green },
   brandMarkText: { color: COLORS.lime, fontSize: 11, fontWeight: '800' },
   brandName: { color: COLORS.ink, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
   brandCaption: { marginTop: 3, color: COLORS.muted, fontSize: 8, fontWeight: '700', letterSpacing: 1 },
   hero: { paddingTop: 23, paddingBottom: 17 },
-  eyebrow: { color: palette.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.4 },
+  eyebrow: { color: '#627A68', fontSize: 9, fontWeight: '800', letterSpacing: 1.4 },
   title: { marginTop: 8, color: COLORS.ink, fontFamily: 'serif', fontSize: 32, lineHeight: 38, fontWeight: '600' },
   subtitle: { marginTop: 7, color: COLORS.muted, fontSize: 12, lineHeight: 18 },
   modeRow: { flexDirection: 'row', gap: 8, marginBottom: 15 },
@@ -960,7 +1027,7 @@ const styles = StyleSheet.create({
   tabText: { color: COLORS.muted, fontSize: 11, fontWeight: '700' },
   tabTextSelected: { color: COLORS.green },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  searchInput: { minHeight: 46, flex: 1, paddingHorizontal: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
+  searchInput: { minHeight: 46, flex: 1, paddingHorizontal: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 8, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
   categoryRow: { gap: 7, paddingVertical: 5, paddingBottom: 12 },
   categoryChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: COLORS.line, borderRadius: 20, backgroundColor: COLORS.white },
   categoryChipSelected: { borderColor: COLORS.green, backgroundColor: COLORS.green },
@@ -978,7 +1045,7 @@ const styles = StyleSheet.create({
   sortButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 7 },
   sortText: { color: COLORS.green, fontSize: 11, fontWeight: '700' },
   list: { gap: 10, paddingBottom: 12 },
-  itemCard: { flexDirection: 'row', gap: 12, padding: 11, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white },
+  itemCard: { flexDirection: 'row', gap: 12, padding: 11, borderWidth: 1, borderColor: COLORS.line, borderRadius: 9, backgroundColor: COLORS.white },
   itemImageWrap: { width: 82, height: 108, overflow: 'hidden', borderRadius: 7, backgroundColor: '#E8ECE7' },
   itemImage: { width: '100%', height: '100%' },
   itemPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5, backgroundColor: '#E8ECE7' },
@@ -986,7 +1053,7 @@ const styles = StyleSheet.create({
   itemDetails: { flex: 1, justifyContent: 'center' },
   itemTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 7 },
   itemName: { flex: 1, color: COLORS.ink, fontSize: 13, lineHeight: 18, fontWeight: '800' },
-  availabilityTag: { overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 3, fontSize: 7, fontWeight: '800', letterSpacing: 0.4 },
+  availabilityTag: { overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 10, fontSize: 7, fontWeight: '800', letterSpacing: 0.4 },
   availableTag: { color: COLORS.green, backgroundColor: '#E7EEE4' },
   unavailableTag: { color: '#80534A', backgroundColor: '#F3E7E2' },
   itemMeta: { marginTop: 5, color: COLORS.muted, fontSize: 10, lineHeight: 14 },
@@ -998,31 +1065,31 @@ const styles = StyleSheet.create({
   actionButtonTextSecondary: { color: COLORS.green },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.45 },
-  emptyState: { alignItems: 'center', padding: 25, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white },
+  emptyState: { alignItems: 'center', padding: 25, borderWidth: 1, borderColor: COLORS.line, borderRadius: 9, backgroundColor: COLORS.white },
   emptyTitle: { color: COLORS.ink, fontFamily: 'serif', fontSize: 22, fontWeight: '600', textAlign: 'center' },
   emptyText: { marginTop: 8, marginBottom: 12, color: COLORS.muted, fontSize: 12, lineHeight: 18, textAlign: 'center' },
-  deletedCard: { padding: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white },
+  deletedCard: { padding: 13, borderWidth: 1, borderColor: COLORS.line, borderRadius: 9, backgroundColor: COLORS.white },
   deletedCopy: { marginBottom: 9 },
   retentionText: { marginTop: 6, color: COLORS.muted, fontSize: 10, lineHeight: 14 },
   missingPhotoText: { marginTop: 5, color: COLORS.error, fontSize: 10, fontWeight: '600' },
   deletedActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   form: { paddingBottom: 20 },
   formIntro: { marginBottom: 14, color: COLORS.muted, fontSize: 11, lineHeight: 16 },
-  textInput: { minHeight: 46, marginBottom: 13, paddingHorizontal: 12, borderWidth: 1, borderColor: COLORS.line, borderRadius: 3, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
+  textInput: { minHeight: 46, marginBottom: 13, paddingHorizontal: 12, borderWidth: 1, borderColor: COLORS.line, borderRadius: 8, backgroundColor: COLORS.white, color: COLORS.ink, fontSize: 12 },
   checkRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
   checkbox: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.line, borderRadius: 5 },
   checkboxSelected: { borderColor: COLORS.green, backgroundColor: COLORS.green },
   checkboxMark: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
   checkLabel: { color: COLORS.ink, fontSize: 11, fontWeight: '700' },
-  photoPreview: { width: 142, height: 176, marginBottom: 9, borderRadius: 3, backgroundColor: '#E8ECE7' },
-  noPhotoPreview: { width: 142, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 9, borderRadius: 3, backgroundColor: '#E8ECE7' },
+  photoPreview: { width: 142, height: 176, marginBottom: 9, borderRadius: 8, backgroundColor: '#E8ECE7' },
+  noPhotoPreview: { width: 142, height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 9, borderRadius: 8, backgroundColor: '#E8ECE7' },
   formActionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 9 },
   availabilitySwitch: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 9 },
   availabilityValue: { color: COLORS.green, fontSize: 11, fontWeight: '700' },
-  saveButton: { minHeight: 46, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 3, backgroundColor: COLORS.lime },
-  saveButtonText: { color: COLORS.white, fontSize: 12, fontWeight: '800' },
+  saveButton: { minHeight: 46, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: COLORS.lime },
+  saveButtonText: { color: COLORS.ink, fontSize: 12, fontWeight: '800' },
   formError: { marginBottom: 10, color: COLORS.error, fontSize: 11, lineHeight: 16 },
-  errorBanner: { marginBottom: 10, padding: 11, borderRadius: 3, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
-  notice: { marginBottom: 10, padding: 11, borderRadius: 3, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
+  errorBanner: { marginBottom: 10, padding: 11, borderRadius: 8, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
+  notice: { marginBottom: 10, padding: 11, borderRadius: 8, backgroundColor: '#F9E8E4', color: COLORS.error, fontSize: 11, lineHeight: 16 },
   privacyNote: { marginTop: 8, color: COLORS.muted, fontSize: 10, lineHeight: 15, textAlign: 'center' },
 });

@@ -1,5 +1,6 @@
 {
   "extends": "expo/tsconfig.base",
-  "compilerOptions": { "allowJs": true, "checkJs": false, "noEmit": true },
-  "include": ["src/**/*.js", "App.js", "index.js"]
+  "compilerOptions": { "strict": true, "allowJs": true, "checkJs": false, "noEmit": true },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "App.js"],
+  "exclude": ["node_modules", "services", "dist"]
 }

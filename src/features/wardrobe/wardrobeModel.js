@@ -1,7 +1,7 @@
 const WARDROBE_SCHEMA_VERSION = 1;
 const RECOVERY_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
-const WARDROBE_CATEGORIES = ['top', 'bottom', 'shoes', 'layer', 'accessory'];
-const OCCASIONS = ['Work', 'Date Night', 'Casual', 'Formal', 'Gym'];
+const WARDROBE_CATEGORIES = ['top', 'bottom', 'shoes', 'layer', 'accessory', 'onepiece'];
+const { OCCASIONS } = require('../suggest/occasions');
 
 function createEmptyWardrobeState() {
   return {
@@ -9,6 +9,7 @@ function createEmptyWardrobeState() {
     mode: 'personal',
     personalItems: [],
     recentlyDeleted: [],
+    wishlistItems: [],
     demoAvailability: {},
   };
 }
@@ -33,6 +34,8 @@ function isWardrobeItem(item) {
     typeof item.available === 'boolean' &&
     Array.isArray(item.occasions) &&
     item.occasions.every((occasion) => OCCASIONS.includes(occasion)) &&
+    (item.warmth === undefined || ['', 'Light', 'Warm'].includes(item.warmth)) &&
+    (item.coverage === undefined || ['', 'Minimal', 'Moderate', 'More'].includes(item.coverage)) &&
     (item.weatherTags === undefined ||
       (Array.isArray(item.weatherTags) &&
         item.weatherTags.every((tag) => ['cold', 'mild', 'hot', 'rainy'].includes(tag)))),
@@ -46,6 +49,7 @@ function isWardrobeState(state) {
     ['personal', 'demo'].includes(state.mode) &&
     Array.isArray(state.personalItems) &&
     state.personalItems.every(isWardrobeItem) &&
+    (state.wishlistItems === undefined || (Array.isArray(state.wishlistItems) && state.wishlistItems.every(isWardrobeItem))) &&
     Array.isArray(state.recentlyDeleted) &&
     state.recentlyDeleted.every(
       (item) =>

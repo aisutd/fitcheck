@@ -19,8 +19,9 @@ test('editorial homepage, filtering, saving and integrated routes', async ({ pag
  await page.getByRole('button', { name: 'Try on a piece' }).first().click();
  await expect(page).toHaveURL(/try-on/); await expect(page.getByText('Virtual Try-On', { exact: true })).toBeVisible();
  await page.goto('/analysis'); await expect(page.getByRole('heading', { name: 'Recognition & review.' })).toBeVisible();
- await page.goto('/privacy'); await expect(page.getByRole('heading', { name: 'Privacy & data.' })).toBeVisible();
- await expect(page.getByText(/Cloud privacy controls are unavailable/)).toBeVisible();
+ await page.goto('/privacy'); await expect(page.getByText('A little more peace of mind.', { exact: true })).toBeVisible();
+ await expect(page.getByRole('button', { name: 'Closet visibility: Private' })).toBeVisible();
+ await expect(page.getByText(/Cloud privacy controls are unavailable/)).toHaveCount(0);
  expect(errors).toEqual([]);
 });
 test('wardrobe, quiz, search and shopping are reachable', async ({ page }) => {

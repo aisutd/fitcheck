@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { activityApiUrl } from './lib/activityConfig';
 import { getUserId, visibilityError } from './lib/closetVisibility';
-import { supabase } from './lib/supabase';
+import { getPrivacyClient } from './lib/supabase';
 
 type Activity = { requests_last_5_minutes: number; alerts: { window: string; requests: number }[] };
 
@@ -15,6 +15,7 @@ export function SecurityActivity() {
     if (!activityApiUrl) { setMessage('Account activity monitoring is not configured for this build.'); return; }
     try {
       await getUserId();
+      const supabase = getPrivacyClient();
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
       if (!data.session) throw new Error('Your session is not ready.');
@@ -39,6 +40,7 @@ export function SecurityActivity() {
     setMessage('Running a test burst of read-only requests...');
     try {
       const userId = await getUserId();
+      const supabase = getPrivacyClient();
       // Genuine requests through the gateway, not client-supplied activity logs.
       for (let batch = 0; batch < 8; batch++) {
         await Promise.all(Array.from({ length: 10 }, async () => {

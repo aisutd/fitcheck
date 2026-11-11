@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getPrivacyClient } from './supabase';
 
 export type ClosetVisibility = 'Private' | 'Friends Only' | 'Public';
 
@@ -8,6 +8,7 @@ let userPromise: Promise<string> | null = null;
 export async function getUserId(): Promise<string> {
   if (!userPromise) {
     userPromise = (async () => {
+      const supabase = getPrivacyClient();
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
       if (data.session) return data.session.user.id;
@@ -27,6 +28,7 @@ export async function getUserId(): Promise<string> {
 
 export async function loadClosetVisibility(): Promise<ClosetVisibility> {
   const userId = await getUserId();
+  const supabase = getPrivacyClient();
   const { data, error } = await supabase
     .from('privacy_settings')
     .select('closet_visibility')
@@ -43,6 +45,7 @@ export async function loadClosetVisibility(): Promise<ClosetVisibility> {
 
 export async function saveClosetVisibility(value: ClosetVisibility): Promise<void> {
   const userId = await getUserId();
+  const supabase = getPrivacyClient();
   const created = await supabase.from('privacy_settings').upsert({
     user_id: userId,
   }, { onConflict: 'user_id', ignoreDuplicates: true });

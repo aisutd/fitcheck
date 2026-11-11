@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getUserId, visibilityError } from './closetVisibility';
-import { supabase } from './supabase';
+import { getPrivacyClient } from './supabase';
 import { MockData } from '../privacyData';
 
 export type DemoRecords = Omit<MockData, 'memory'>;
@@ -54,6 +54,7 @@ export function validatePreference<K extends keyof Preferences>(field: K, value:
 
 export async function loadPreference<K extends keyof Preferences>(field: K): Promise<Preferences[K]> {
   const id = await getUserId();
+  const supabase = getPrivacyClient();
   const { data, error } = await supabase.from('privacy_settings')
     .select(field).eq('user_id', id).maybeSingle();
   if (error) throw error;
@@ -66,6 +67,7 @@ export async function loadPreference<K extends keyof Preferences>(field: K): Pro
 export async function savePreference<K extends keyof Preferences>(field: K, value: Preferences[K]): Promise<void> {
   validatePreference(field, value);
   const id = await getUserId();
+  const supabase = getPrivacyClient();
   // Create a default row only if absent; never overwrite another setting.
   const created = await supabase.from('privacy_settings')
     .upsert({ user_id: id }, { onConflict: 'user_id', ignoreDuplicates: true });

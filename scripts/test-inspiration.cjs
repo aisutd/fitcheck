@@ -1,0 +1,12 @@
+const assert = require('node:assert/strict');
+const { matchInspiration, INSPIRATIONS } = require('../src/features/search/inspiration');
+const { garmentColor } = require('../src/features/wardrobe/garmentColors');
+const items = [{ id:'a', name:'Blue denim jeans', available:true, category:'bottom', occasions:['Casual'] }, { id:'b', name:'Denim jacket', available:false, category:'layer', occasions:['Casual'] }, { id:'c', name:'Tailored trousers', available:true, category:'bottom', occasions:['Work'] }];
+assert.deepEqual(matchInspiration(items, {inspiration:INSPIRATIONS[0]}).map(i=>i.id), ['a']);
+assert.deepEqual(matchInspiration(items, {occasion:'Work'}).map(i=>i.id), ['c']);
+assert.equal(matchInspiration(items,{query:'denim',occasion:'Work'}).length,0);
+assert.equal(matchInspiration(items,{query:'nonexistent'}).length,0);
+assert.equal(garmentColor('white','#000000'),garmentColor('white'));
+assert.notEqual(garmentColor('white'), '#000000');
+assert.equal(garmentColor('unknown'), '');
+console.log('Passed inspiration matching, availability, occasion isolation, empty results and clothing color checks.');

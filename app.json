@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "FitCheck",
+    "slug": "FitCheck",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FitCheck uses photos you choose to add clothing to your wardrobe.",
+          "cameraPermission": "FitCheck uses the camera only when you choose to photograph clothing.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-router",
+      "expo-sharing"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "fitcheck"
+  }
+}

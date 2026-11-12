@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import FeaturePage, { ui } from '../components/FeaturePage';
 import { useFitCheck } from '../../App';
@@ -29,16 +29,19 @@ export default function SearchScreen() {
  }
  const matches = wardrobeReady && query.trim() ? filterWardrobeItems(wardrobeState.personalItems, { search: query }) : [];
  function openItem(item) { router.push({ pathname: '/wardrobe', params: { item: item.id } }); }
- return <FeaturePage title="Find your next look.">
+ return <FeaturePage title="Find Your Next Look">
   <Text style={ui.body}>Search your closet or describe an occasion for an AI outfit idea.</Text>
-  <TextInput accessibilityLabel="Search clothing, occasion or style" value={query} onChangeText={edit} onSubmitEditing={search} returnKeyType="search" placeholder="An evening concert, relaxed linen…" maxLength={2000} style={ui.input} />
-  <View style={ui.row}>{categories.filter((category) => category.toLowerCase().includes(query.toLowerCase())).map((category) => <Pressable key={category} accessibilityRole="button" style={ui.button} accessibilityState={{ selected: selected === category }} onPress={() => { setSelected(selected === category ? '' : category); edit(category); }}><Text style={ui.link}>{category}</Text></Pressable>)}</View>
+  <TextInput accessibilityLabel="Search clothing, occasion or style" value={query} onChangeText={edit} onSubmitEditing={search} returnKeyType="search" placeholder="An evening concert, relaxed linen…" maxLength={2000} style={[ui.input, styles.searchInput]} />
+  <View style={[ui.row, styles.categories]}>{categories.filter((category) => category.toLowerCase().includes(query.toLowerCase())).map((category) => <Pressable key={category} accessibilityRole="button" style={ui.button} accessibilityState={{ selected: selected === category }} onPress={() => { setSelected(selected === category ? '' : category); edit(category); }}><Text style={ui.link}>{category}</Text></Pressable>)}</View>
   {!categories.some((category) => category.toLowerCase().includes(query.toLowerCase())) ? <Text style={ui.body}>No categories found. You can still search for an outfit idea.</Text> : null}
-  <Pressable accessibilityRole="button" disabled={loading || !query.trim()} onPress={search} style={[ui.button, (loading || !query.trim()) && ui.disabled]}><Text style={ui.link}>Create an outfit idea</Text></Pressable>
-  <Text style={ui.body}>AI search sends your search text to Groq. Generated suggestions are ideas, not items confirmed in your wardrobe.</Text>
   {loading ? <ActivityIndicator color="#243528" /> : null}{error ? <Text accessibilityRole="alert" style={ui.error}>{error}</Text> : null}
   {result ? <View style={ui.card}><Text style={ui.title}>{result.title}</Text><Text style={ui.body}>{result.matched_category}</Text>{result.items.map((item, index) => <View key={index}><Text style={ui.body}>{item}</Text><Pressable accessibilityRole="button" style={ui.button} onPress={() => router.push({ pathname: '/shopping', params: { occasion: categories.includes(query) ? query : 'Casual', category: /shoe|boot|sneaker|heel/i.test(item) ? 'shoes' : /pants|trouser|skirt|shorts|jeans/i.test(item) ? 'bottom' : /jacket|coat|cardigan/i.test(item) ? 'layer' : /dress|suit/i.test(item) ? 'onepiece' : /bag|belt|scarf|jewelry/i.test(item) ? 'accessory' : 'top', style: item } })}><Text style={ui.link}>Shop this idea →</Text></Pressable></View>)}<Text style={ui.body}>{result.styling_tip}</Text></View> : null}
   {query.trim() ? <Text style={ui.body}>{matches.length} matching pieces in your personal wardrobe</Text> : null}
   {matches.map((item) => <Pressable accessibilityRole="button" key={item.id} onPress={() => openItem(item)} style={ui.card}><Text style={ui.link}>{item.name}</Text><Text style={ui.body}>{item.color} · {item.category}</Text></Pressable>)}
  </FeaturePage>;
 }
+
+const styles = StyleSheet.create({
+ searchInput: { width: '100%', alignSelf: 'center', textAlign: 'center' },
+ categories: { justifyContent: 'center' },
+});

@@ -18,6 +18,15 @@ npm run web
 
 `npm run ios` and `npm run android` start Expo for those platforms. A physical phone needs reachable LAN service URLs in `.env.local`; `localhost` on a phone refers to the phone. Native modules require the compatible Expo Go/development build. No simulator testing is claimed.
 
+Run these commands from `fitcheck`, not `fitcheck/privacy-demo`. The standalone
+privacy demo has its own `.env.local`; Expo does not read that file for the
+integrated app. Put the same public Supabase URL and publishable key in
+`fitcheck/.env.local`, together with `EXPO_PUBLIC_ACTIVITY_API_URL=http://127.0.0.1:8000`.
+Configure `services/privacy/.env.local` using its example. `npm run web` starts
+the configured local privacy backend before opening the integrated app on port
+8081. It uses `fitcheck/.venv`, or the existing `privacy-demo/ai-model/.venv`.
+`npm run privacy:server` starts only the backend. Restart `npm run web` after setup.
+
 You can use the quiz, manual wardrobe, avatar, local outfit recommendations, saved looks and travel planner without external API keys. Open Wardrobe → Demo Mode to explore authored sample clothes. Personal and sample closets remain separate. Weather is manually selected in Refine; the quiz’s weather preferences affect known garment attributes.
 
 The homepage exposes Search and Privacy & data. Outfit details and personal clothing cards expose try-on and photo analysis. Wardrobe → Collections & wishlist preserves the recognition contributor’s favorites, laundry, wear counts, filters, sample photos and bulk wishlist transfers. Set suitable occasions in the main wardrobe form before a new item can appear in recommendations. Recognition results are editable suggestions, never ground truth.
@@ -39,7 +48,7 @@ Run required services in separate terminals. API keys belong only in service `.e
 | Shopping | `npm run shopping:server` | Copy `server/.env.example` to `server/.env.local`; set `SERPAPI_KEY`. Port 8789; `SHOPPING_WEB_ORIGIN` must match your browser origin. |
 | AI search | `npm run search:server` | Copy `services/search/.env.example` to `.env.local` in that directory; set `GROQ_API_KEY`. Port 5001. |
 | Photo analysis | `npm run analysis:server` | Copy `services/analysis/.env.example` to `.env.local` there; set `GEMINI_API_KEY`, confirm an accessible `GEMINI_MODEL`, and set `ALLOWED_ORIGINS`. Port 8787. |
-| Try-on | `.venv/bin/python -m uvicorn app.main:app --app-dir services/tryon --host 0.0.0.0 --port 8001` | Copy `services/tryon/.env.example` to `.env.local` there. Set `COLAB_API_URL` and `COLAB_API_KEY` for the original `/generate` model endpoint. |
+| Try-on | `.venv/bin/python -m uvicorn app.main:app --app-dir services/tryon --host 0.0.0.0 --port 8001` | Copy `services/tryon/.env.example` to `.env.local` there. Set `MODEL_API_URL` and `MODEL_API_KEY` for the `/generate` model endpoint. |
 | Recognition | `.venv/bin/python services/recognition/server.py` | Install `services/recognition/requirements.txt` in an inference-compatible environment. Port 5050. Optional `FASHIONCLIP_MODEL_PATH` and `FASHION_CLASSIFIERS_DIR` in `services/recognition/.env.local`. The first inference downloads FashionCLIP weights unless a local model is supplied. |
 | Privacy | `.venv/bin/python -m uvicorn server:app --app-dir services/privacy --host 0.0.0.0 --port 8000` | Copy `services/privacy/.env.example` to `.env.local` there. Configure the same Supabase URL/publishable key as the app; enable anonymous sign-in and apply `services/privacy/supabase/SETUP_ALL.sql`. Set `APP_ORIGINS`. |
 

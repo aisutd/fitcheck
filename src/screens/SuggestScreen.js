@@ -36,11 +36,9 @@ export default function SuggestScreen({
   storageReady = true,
   wardrobeReady = true,
   wardrobeState = null,
-  avatarReady = false,
   avatarError = '',
   onOpenQuiz = () => {},
   onOpenWardrobe = () => {},
-  onOpenAvatarStudio = () => {},
   onRetryStorage = () => {},
 }) {
   const { width, fontScale } = useWindowDimensions();
@@ -154,7 +152,7 @@ export default function SuggestScreen({
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nav}>
             <View style={[styles.navItem, styles.navActive]}><Text style={styles.navActiveText}>Outfits</Text></View>
             <NavButton label="Wardrobe" onPress={onOpenWardrobe} disabled={!wardrobeReady} />
-            <NavButton label="Avatar" onPress={onOpenAvatarStudio} disabled={!avatarReady} />
+            <NavButton label="Avatar" onPress={() => router.push('/try-on')} />
             <NavButton label={`Saved & travel${savedCount ? ` · ${savedCount}` : ''}`} onPress={openTools} />
           </ScrollView>
           <View style={[styles.introRow, width >= 900 && styles.introRowWide]}>

@@ -11,8 +11,8 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env.local")
 
 router = APIRouter()
 
-COLAB_API_URL = os.getenv("COLAB_API_URL")
-COLAB_API_KEY = os.getenv("COLAB_API_KEY")
+MODEL_API_URL = os.getenv("MODEL_API_URL")
+MODEL_API_KEY = os.getenv("MODEL_API_KEY")
 
 
 @router.post("/tryon")
@@ -26,8 +26,8 @@ async def generate_tryon(
     if garment.content_type not in ("image/jpeg", "image/png"):
         raise HTTPException(400, "Invalid garment image type")
 
-    if not COLAB_API_URL or not COLAB_API_KEY:
-        raise HTTPException(503, "Colab API is not configured")
+    if not MODEL_API_URL or not MODEL_API_KEY:
+        raise HTTPException(503, "Model API is not configured")
 
     files = {
         "person": (
@@ -45,31 +45,29 @@ async def generate_tryon(
     try:
         async with httpx.AsyncClient(timeout=600.0) as client:
             response = await client.post(
-                f"{COLAB_API_URL.rstrip('/')}/generate",
+                f"{MODEL_API_URL.rstrip('/')}/generate",
                 files=files,
                 data={
                     "description": "a fitted spaghetti-strap tank top",
                     "steps": "30",
                     "seed": "42",
                 },
-                headers={
-                    "X-API-Key": COLAB_API_KEY,
-                },
+                headers={"X-API-Key": MODEL_API_KEY},
             )
 
         response.raise_for_status()
 
     except httpx.TimeoutException:
-        raise HTTPException(504, "Colab inference timed out")
+        raise HTTPException(504, "Model inference timed out")
 
     except httpx.HTTPStatusError as exc:
         raise HTTPException(
             502,
-            f"Colab API returned status {exc.response.status_code}",
+            f"Model API returned status {exc.response.status_code}",
         )
 
     except httpx.RequestError:
-        raise HTTPException(502, "Could not connect to Colab API")
+        raise HTTPException(502, "Could not connect to Model API")
 
     return Response(
         content=response.content,

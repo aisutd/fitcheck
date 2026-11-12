@@ -266,11 +266,7 @@ export default function App({ activeScreen = 'suggest' }) {
       onOpenWardrobe={() => {
         if (wardrobeReady) setScreen('wardrobe');
       }}
-      avatarReady={avatarReady}
       avatarError={avatarError}
-      onOpenAvatarStudio={() => {
-        if (avatarReady) setScreen('avatar');
-      }}
       onRetryStorage={() => {
         setLoading(true);
         setLoadAttempt((attempt) => attempt + 1);

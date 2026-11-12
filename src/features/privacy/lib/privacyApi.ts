@@ -1,10 +1,11 @@
 import { activityApiUrl } from './activityConfig';
 import { getUserId } from './closetVisibility';
-import { supabase } from './supabase';
+import { getPrivacyClient } from './supabase';
 
 export async function privacyRequest(path: string, init: RequestInit = {}) {
   if (!activityApiUrl) throw new Error('The privacy backend URL is not configured.');
   await getUserId();
+  const supabase = getPrivacyClient();
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
   if (!data.session) throw new Error('Your session is not ready.');

@@ -1,17 +1,19 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import { activityApiUrl } from './activityConfig';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!url || !key) {
-  throw new Error('Missing Supabase settings in .env.local');
-}
+let client: SupabaseClient | null = null;
 
-export const supabase = createClient(url, key, {
+// Initialize only when a cloud action runs, so the screen always renders.
+export function getPrivacyClient() {
+  if (client) return client;
+  if (!url || !key) throw new Error('Cloud connection unavailable. Your settings cannot be loaded or saved right now.');
+  client = createClient(url, key, {
   global: {
     // Avoid leaving the screen stuck on a network request indefinitely.
     fetch: async (input, init) => {
@@ -45,3 +47,5 @@ export const supabase = createClient(url, key, {
     detectSessionInUrl: false,
   },
 });
+  return client;
+}

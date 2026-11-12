@@ -37,10 +37,11 @@
     "three": "^0.186.1"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "node scripts/dev-web.cjs",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web",
+    "web": "node scripts/dev-web.cjs",
+    "privacy:server": "node scripts/dev-web.cjs --backend-only",
     "test:recommendations": "node scripts/test-recommendations.cjs",
     "test:quiz": "node scripts/test-quiz.cjs",
     "test:wardrobe": "node scripts/test-wardrobe.cjs",

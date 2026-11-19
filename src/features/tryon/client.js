@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 const API = (process.env.EXPO_PUBLIC_TRYON_API_URL || 'http://localhost:8001').replace(/\/$/, '');
 export async function generateTryOn(person, garment, signal) {
   const data = new FormData();
+  data.append('description', garment?.garmentDescription?.trim() || 'a clothing item');
   for (const [name, photo] of [['person', person], ['garment', garment]]) {
     if (!photo?.uri) throw new Error('Choose both a person and a garment photo.');
     if (Platform.OS === 'web') {

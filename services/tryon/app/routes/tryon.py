@@ -3,7 +3,7 @@ from pathlib import Path
 import httpx
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import Response
 
 load_dotenv()
@@ -19,6 +19,7 @@ MODEL_API_KEY = os.getenv("MODEL_API_KEY")
 async def generate_tryon(
     person: UploadFile = File(...),
     garment: UploadFile = File(...),
+    description: str = Form('a clothing item', max_length=500),
 ):
     if person.content_type not in ("image/jpeg", "image/png"):
         raise HTTPException(400, "Invalid person image type")
@@ -42,13 +43,16 @@ async def generate_tryon(
         ),
     }
 
+    description = description.strip() or 'a clothing item'
+    print(f'[Try-On] Garment description: {description!r}', flush=True)
+
     try:
         async with httpx.AsyncClient(timeout=600.0) as client:
             response = await client.post(
                 f"{MODEL_API_URL.rstrip('/')}/generate",
                 files=files,
                 data={
-                    "description": "a fitted spaghetti-strap tank top",
+                    "description": description,
                     "steps": "30",
                     "seed": "42",
                 },

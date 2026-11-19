@@ -1,6 +1,6 @@
 import { Alert, Image, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-export type Photo = ImagePicker.ImagePickerAsset;
+export type Photo = ImagePicker.ImagePickerAsset & { garmentDescription?: string };
 export function validPhoto(photo: Photo | null | undefined): photo is Photo {
   return !!photo && typeof photo.uri === 'string' && photo.uri.length > 0 && Number.isFinite(photo.width) && photo.width > 0 && Number.isFinite(photo.height) && photo.height > 0 && (!photo.type || photo.type === 'image') && (!photo.mimeType || photo.mimeType.startsWith('image/'));
 }

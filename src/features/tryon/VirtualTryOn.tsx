@@ -4,6 +4,8 @@ import { Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { chooseImage, Photo, validPhoto } from './photos';
+import { tagPhoto } from '../recognition/photoService';
+import { buildGarmentDescription } from './garmentDescription';
 const C = {
   ivory: '#F7F3EC', forest: '#283421', olive: '#586648', oliveHover: '#46533A',
   sage: '#969D7C', beige: '#EDE8DE', border: '#D8D3C5',
@@ -48,6 +50,7 @@ export default function VirtualTryOn({ initialGarment, onClose }: { initialGarme
   const [garmentPhoto, setGarmentPhoto] = useState<Photo | null>(initialGarment || null);
   const [sourceTab, setSourceTab] = useState<Tab | null>(null);
   const [picking, setPicking] = useState(false);
+  const [tagging, setTagging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState('');
   const [dots, setDots] = useState(1);
@@ -60,9 +63,26 @@ export default function VirtualTryOn({ initialGarment, onClose }: { initialGarme
   async function select(camera: boolean) {
     if (!sourceTab || busyRef.current) return;
     const target = sourceTab; setSourceTab(null); busyRef.current = true; setPicking(true);
-    try { const photo = await chooseImage(camera); if (mounted.current && photo) update(target, photo); }
+    try {
+      const photo = await chooseImage(camera);
+      if (!mounted.current || !photo) return;
+      // Show the new preview immediately, without retaining an old garment description.
+      update(target, target === 'Garment' ? { ...photo, garmentDescription: undefined } : photo);
+      if (target === 'Garment') {
+        setTagging(true);
+        try {
+          const tags = await tagPhoto(photo);
+          if (!tags || typeof tags !== 'object' || Array.isArray(tags)) throw new Error('Invalid recognition response.');
+          const description = buildGarmentDescription({ recognition: tags });
+          if (description === 'a clothing item') throw new Error('No clothing details recognized.');
+          if (mounted.current) setGarmentPhoto(current => current?.uri === photo.uri ? { ...current, garmentDescription: description } : current);
+        } catch {
+          if (mounted.current) setMessage('Clothing recognition was unavailable. You can still generate using a generic garment description.');
+        }
+      }
+    }
     catch (error) { if (mounted.current) setMessage(error instanceof Error ? error.message : 'Could not open the photo picker. Please try again.'); }
-    finally { busyRef.current = false; if (mounted.current) setPicking(false); }
+    finally { busyRef.current = false; if (mounted.current) { setPicking(false); setTagging(false); } }
   }
   async function generate() {
     if (busyRef.current || !validPhoto(userPhoto) || !validPhoto(garmentPhoto)) return;
@@ -95,8 +115,9 @@ export default function VirtualTryOn({ initialGarment, onClose }: { initialGarme
           <PhotoUploadCard tab={tab} photo={photo} height={Math.max(330, Math.min(460, height * .43))}
             busy={loading || picking} onChoose={() => setSourceTab(tab)} onRemove={() => update(tab, null)}
             onError={() => { update(tab, null); controller.current?.abort(); setMessage('This image could not be displayed. Please choose another photo.'); }} />
+          {tagging && <Text accessibilityLiveRegion="polite" style={s.tagStatus}>Recognizing garment… Your preview is ready; tagging may take a little time.</Text>}
           <PhotoGuidance />
-          <Text style={s.modelNote}>This model needs a real full-body photo and a garment photo. Your configured avatar stays on your device; it is not a compatible input. Selected photos are sent to the configured try-on service when you generate.</Text>
+          <Text style={s.modelNote}>This model needs a real full-body photo and a garment photo. Your configured avatar stays on your device; it is not a compatible input. Fresh garment photos are sent to the recognition service when selected. Both photos are sent to the try-on service when you generate.</Text>
           <Button title={loading ? `Generating${'.'.repeat(dots)}` : 'Generate Try-On →'}
             disabled={loading || picking || !validPhoto(userPhoto) || !validPhoto(garmentPhoto)} onPress={generate} />
           {generated ? (
@@ -160,6 +181,7 @@ const s = StyleSheet.create({
   bulbBase: { width: 6, height: 4, borderBottomWidth: 1, borderColor: C.olive, position: 'absolute', bottom: -4, left: 2 },
   tipIcon: { fontSize: 18, color: C.olive, width: 20, textAlign: 'center' },
   tipText: { flex: 1, color: C.muted, fontSize: 13, lineHeight: 20 },
+  tagStatus: { color: C.muted, fontSize: 12, lineHeight: 19, marginTop: space.medium },
   modelNote: { color: C.muted, fontSize: 12, lineHeight: 19, padding: space.medium, marginBottom: space.medium, borderRadius: 14, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
   button: { minHeight: 54, paddingHorizontal: 20, paddingVertical: 12, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.olive },
   secondaryButton: { minHeight: 46 },

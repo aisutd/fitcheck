@@ -37,3 +37,20 @@ def test_provider_failure():
     original_client = httpx.AsyncClient
     with patch.object(route, 'MODEL_API_URL', 'https://model.example'), patch.object(route, 'MODEL_API_KEY', 'fixture'), patch.object(route.httpx, 'AsyncClient', side_effect=lambda **kwargs: original_client(transport=httpx.MockTransport(lambda request: httpx.Response(500)), **kwargs)):
         assert client.post('/tryon', files=files()).status_code == 502
+
+
+def test_garment_description_forwarding_and_fallback():
+    original_client = httpx.AsyncClient
+    received = []
+
+    def respond(request):
+        part = request.content.split(b'name="description"', 1)[1]
+        received.append(part.split(b'\r\n\r\n', 1)[1].split(b'\r\n', 1)[0].decode())
+        return httpx.Response(200, content=b'png-result', headers={'content-type': 'image/png'})
+
+    with patch.object(route, 'MODEL_API_URL', 'https://model.example'), patch.object(route, 'MODEL_API_KEY', 'fixture'), patch.object(route.httpx, 'AsyncClient', side_effect=lambda **kwargs: original_client(transport=httpx.MockTransport(respond), **kwargs)):
+        assert client.post('/tryon', files=files(), data={'description': 'black fitted cotton tank top'}).status_code == 200
+        assert client.post('/tryon', files=files()).status_code == 200
+        assert client.post('/tryon', files=files(), data={'description': '   '}).status_code == 200
+        assert client.post('/tryon', files=files(), data={'description': 'x' * 501}).status_code == 422
+    assert received == ['black fitted cotton tank top', 'a clothing item', 'a clothing item']

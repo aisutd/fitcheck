@@ -103,6 +103,12 @@ export async function uploadPhoto(asset) {
     return uploadPhotoBlob(blob, fileName);
 }
 
+// Recognition only: fresh try-on photos do not need to be saved to the closet.
+export async function tagPhoto(asset) {
+    const { blob, fileName } = await readPhotoAsset(asset);
+    return tagPhotoBlob(blob, fileName);
+}
+
 export async function processPhoto(asset) {
     const { blob, fileName } = await readPhotoAsset(asset);
     const url = await uploadPhotoBlob(blob, fileName);

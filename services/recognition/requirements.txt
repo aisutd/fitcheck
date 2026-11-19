@@ -1,0 +1,12 @@
+flask
+flask-cors
+pillow
+# Added for the FashionCLIP "Recognize Clothes" feature (fashion_tagger.py).
+transformers
+torch
+# Added for eval_accuracy.py's offline accuracy check against the Kaggle
+# "Fashion Product Images Small" dataset - not needed by the live server.
+kagglehub
+pandas
+scikit-learn
+joblib

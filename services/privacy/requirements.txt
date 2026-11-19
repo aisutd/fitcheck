@@ -1,0 +1,9 @@
+numpy
+pandas
+scikit-learn
+joblib
+fastapi
+uvicorn
+httpx
+python-dotenv
+Pillow

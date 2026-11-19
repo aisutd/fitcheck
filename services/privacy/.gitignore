@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.joblib
+*.sqlite3*
+.tests-*/
+.private/

@@ -1,0 +1,28 @@
+{
+  "records": 49,
+  "fit_labeled": 11,
+  "fit_unlabeled": 38,
+  "fit_counts": {
+    "Wide-Leg": 4,
+    "Fit-and-Flare": 4,
+    "Jogger": 3
+  },
+  "train_count": 8,
+  "holdout_count": 3,
+  "train_classes": {
+    "Jogger": 2,
+    "Wide-Leg": 3,
+    "Fit-and-Flare": 3
+  },
+  "holdout_classes": {
+    "Fit-and-Flare": 1,
+    "Jogger": 1,
+    "Wide-Leg": 1
+  },
+  "load_records_valid": true,
+  "minimum_training_requirements_met": true,
+  "training_performed": false,
+  "backup": "training-app/labels.before-fit-update.jsonl",
+  "original_sha256": "ec6aa5ae004480d0f73f8de00959208faadf194a7cad79c822570faa6e875c43",
+  "updated_sha256": "12d670260fccc38bdcd4344bc8792a06403f4ea31f921cd6b2df569331b64829"
+}
